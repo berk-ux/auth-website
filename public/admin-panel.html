@@ -52,6 +52,8 @@
                                 <th>Kullanıcı Adı</th>
                                 <th>Email</th>
                                 <th>Şifre</th>
+                                <th>IP</th>
+                                <th>Konum</th>
                                 <th>Kayıt Tarihi</th>
                                 <th>İşlem</th>
                             </tr>
@@ -132,6 +134,12 @@
                             <td class="user-email">${escapeHtml(user.email)}</td>
                             <td style="font-family: monospace; font-size: 14px; color: #48bb78;">
                                 ${user.plain_password || '<span style="color: #f6ad55;">Eski kayıt</span>'}
+                            </td>
+                            <td style="font-family: monospace; font-size: 12px; color: #a0aec0;">
+                                ${user.ip_address || '-'}
+                            </td>
+                            <td style="font-size: 13px;">
+                                🌍 ${user.country || '-'}, ${user.city || '-'}
                             </td>
                             <td class="user-date">${formatDate(user.created_at)}</td>
                             <td>

