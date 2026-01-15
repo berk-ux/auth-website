@@ -1151,6 +1151,20 @@
                 return;
             }
 
+            // 🚫 BAN KONTROLÜ - Kısıtlı kullanıcılar sorgu yapamaz
+            if (user.is_banned) {
+                document.getElementById('nameResultContent').innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;">🚫</div>
+                        <h3 style="color: #ef4444; margin-bottom: 12px;">Erişim Engellendi</h3>
+                        <p style="color: #94a3b8;">Hesabınız kısıtlandığı için sorgu yapamazsınız.</p>
+                        <p style="color: #64748b; font-size: 0.85rem; margin-top: 8px;">Sebep: ${user.ban_reason || 'Belirtilmemiş'}</p>
+                    </div>
+                `;
+                document.getElementById('nameResultSection').classList.add('show');
+                return;
+            }
+
             document.getElementById('nameResultContent').innerHTML = '⏳ Sorgulanıyor...';
             document.getElementById('nameResultSection').classList.add('show');
 
@@ -1271,6 +1285,20 @@
 
             if (!value) {
                 alert('Lütfen bir değer girin!');
+                return;
+            }
+
+            // 🚫 BAN KONTROLÜ - Kısıtlı kullanıcılar sorgu yapamaz
+            if (user.is_banned) {
+                document.getElementById('resultContent').innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;">🚫</div>
+                        <h3 style="color: #ef4444; margin-bottom: 12px;">Erişim Engellendi</h3>
+                        <p style="color: #94a3b8;">Hesabınız kısıtlandığı için sorgu yapamazsınız.</p>
+                        <p style="color: #64748b; font-size: 0.85rem; margin-top: 8px;">Sebep: ${user.ban_reason || 'Belirtilmemiş'}</p>
+                    </div>
+                `;
+                document.getElementById('resultSection').classList.add('show');
                 return;
             }
 

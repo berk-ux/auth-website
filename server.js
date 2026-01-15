@@ -317,14 +317,6 @@ app.post('/api/login', async (req, res) => {
 
         const user = result.rows[0];
 
-        // 🚫 BAN KONTROLÜ
-        if (user.is_banned) {
-            return res.status(403).json({
-                success: false,
-                message: 'Hesabınız kısıtlanmıştır! Sebep: ' + (user.ban_reason || 'Belirtilmemiş')
-            });
-        }
-
         // Şifre kontrolü
         const validPassword = await verifyPassword(password, user.password);
         if (!validPassword) {
@@ -349,7 +341,9 @@ app.post('/api/login', async (req, res) => {
                 id: user.id,
                 username: user.username,
                 email: user.email,
-                user_type: user.user_type || 'free'
+                user_type: user.user_type || 'free',
+                is_banned: user.is_banned || false,
+                ban_reason: user.ban_reason || null
             }
         });
 
@@ -733,7 +727,15 @@ app.post('/api/query', async (req, res) => {
         }
 
         // Kullanıcı kontrolü
-        const userCheck = await pool.query('SELECT user_type FROM users WHERE id = $1', [userId]);
+        const userCheck = await pool.query('SELECT user_type, is_banned, ban_reason FROM users WHERE id = $1', [userId]);
+
+        // 🚫 BAN KONTROLÜ - Kısıtlı kullanıcılar sorgu yapamaz
+        if (userCheck.rows[0]?.is_banned) {
+            return res.status(403).json({
+                success: false,
+                message: '🚫 Hesabınız kısıtlandığı için sorgu yapamazsınız! Sebep: ' + (userCheck.rows[0].ban_reason || 'Belirtilmemiş')
+            });
+        }
         const userType = userCheck.rows[0]?.user_type || 'free';
 
         // VIP kontrolü
