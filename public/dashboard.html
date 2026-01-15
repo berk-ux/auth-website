@@ -582,10 +582,39 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Welcome Screen -->
-        <div id="welcomeScreen">
+        <!-- Welcome Screen (Free Users) -->
+        <div id="freeUserScreen">
             <div class="welcome-screen">
-                <div class="welcome-icon">🔐</div>
+                <div class="welcome-icon">🔒</div>
+                <h1 class="welcome-title">Sorgu Paneli Kilitli</h1>
+                <p class="welcome-text" style="margin-bottom: 24px;">Sorgu yapmak için VIP üyelik gereklidir.</p>
+
+                <div
+                    style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 16px; padding: 32px; max-width: 400px; margin: 0 auto;">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">👑</div>
+                    <h2 style="color: #fbbf24; font-size: 1.3rem; margin-bottom: 12px;">VIP Üyelik Avantajları</h2>
+                    <ul style="text-align: left; color: #94a3b8; list-style: none; padding: 0; margin-bottom: 24px;">
+                        <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">✅ Tüm sorgu
+                            türlerine erişim</li>
+                        <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">✅ Sınırsız sorgu
+                            hakkı</li>
+                        <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">✅ Öncelikli destek
+                        </li>
+                        <li style="padding: 8px 0;">✅ Yeni özellikler ilk sizde</li>
+                    </ul>
+                    <button
+                        style="width: 100%; padding: 14px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border: none; border-radius: 10px; color: #000; font-weight: 700; font-size: 1rem; cursor: pointer;">
+                        💳 VIP Satın Al
+                    </button>
+                    <p style="color: #64748b; font-size: 0.75rem; margin-top: 12px;">Admin ile iletişime geçin</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Screen (VIP Users) -->
+        <div id="welcomeScreen" style="display: none;">
+            <div class="welcome-screen">
+                <div class="welcome-icon">👑</div>
                 <h1 class="welcome-title">BERK Panel'e Hoş Geldiniz!</h1>
                 <p class="welcome-text">Sol menüden bir sorgu seçerek başlayın.</p>
             </div>
@@ -656,6 +685,7 @@
     <script>
         // Kullanıcı kontrolü
         const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const isVip = user.user_type === 'vip';
 
         if (!user.id) {
             window.location.href = 'index.html';
@@ -664,12 +694,18 @@
             document.getElementById('userName').textContent = user.username || 'Kullanıcı';
 
             const typeEl = document.getElementById('userType');
-            if (user.user_type === 'vip') {
+            if (isVip) {
                 typeEl.textContent = '👑 VIP Üyelik';
                 typeEl.classList.add('vip');
                 document.getElementById('premiumCTA').style.display = 'none';
+                // VIP kullanıcı için welcome screen göster
+                document.getElementById('freeUserScreen').style.display = 'none';
+                document.getElementById('welcomeScreen').style.display = 'block';
             } else {
                 typeEl.textContent = '○ Free Üyelik';
+                // Free kullanıcı için kilitli ekran göster
+                document.getElementById('freeUserScreen').style.display = 'block';
+                document.getElementById('welcomeScreen').style.display = 'none';
             }
         }
 
@@ -685,12 +721,25 @@
         }
 
         function showWelcome() {
+            if (!isVip) {
+                document.getElementById('freeUserScreen').style.display = 'block';
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('queryScreen').style.display = 'none';
+                document.getElementById('liveQueryScreen').style.display = 'none';
+                return;
+            }
+            document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'block';
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('liveQueryScreen').style.display = 'none';
         }
 
         function showLiveQuery() {
+            if (!isVip) {
+                alert('Bu özellik sadece VIP üyeler için aktiftir!');
+                return;
+            }
+            document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('liveQueryScreen').style.display = 'block';
@@ -700,7 +749,12 @@
             document.getElementById('liveFrame').src = document.getElementById('liveFrame').src;
         }
 
-        function showQuery(type, name, desc, placeholder, isVip = false) {
+        function showQuery(type, name, desc, placeholder, isVipQuery = false) {
+            if (!isVip) {
+                alert('Bu özellik sadece VIP üyeler için aktiftir!');
+                return;
+            }
+            document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'block';
             document.getElementById('liveQueryScreen').style.display = 'none';
