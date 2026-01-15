@@ -112,6 +112,17 @@ async function initDatabase() {
             await pool.query("ALTER TABLE users ADD COLUMN ban_reason TEXT");
         } catch (e) { }
 
+        // Cihaz bilgisi sütunları ekle
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN device_info VARCHAR(255)");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN browser_info VARCHAR(255)");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN os_info VARCHAR(255)");
+        } catch (e) { }
+
         // ID numarasını 39237'den başlat (eğer henüz kullanıcı yoksa)
         const result = await pool.query('SELECT COUNT(*) as count FROM users');
         if (parseInt(result.rows[0].count) === 0) {
@@ -184,6 +195,69 @@ async function hashPassword(password) {
 // Şifre doğrulama
 async function verifyPassword(password, hash) {
     return bcrypt.compare(password, hash);
+}
+
+// User-Agent Parse Et
+function parseUserAgent(userAgent) {
+    if (!userAgent) return { device: 'Bilinmiyor', browser: 'Bilinmiyor', os: 'Bilinmiyor' };
+
+    let device = 'Desktop';
+    let browser = 'Bilinmiyor';
+    let os = 'Bilinmiyor';
+
+    // İşletim Sistemi Tespiti
+    if (/iPhone/.test(userAgent)) {
+        os = 'iOS (iPhone)';
+        device = 'iPhone';
+    } else if (/iPad/.test(userAgent)) {
+        os = 'iOS (iPad)';
+        device = 'iPad';
+    } else if (/Android/.test(userAgent)) {
+        os = 'Android';
+        device = 'Android';
+        // Android cihaz modeli
+        const match = userAgent.match(/Android[^;]*;\s*([^)]+)/);
+        if (match && match[1]) {
+            device = match[1].split(' Build')[0].trim();
+        }
+    } else if (/Windows NT 10/.test(userAgent)) {
+        os = 'Windows 10/11';
+    } else if (/Windows NT 6\.3/.test(userAgent)) {
+        os = 'Windows 8.1';
+    } else if (/Windows NT 6\.1/.test(userAgent)) {
+        os = 'Windows 7';
+    } else if (/Windows/.test(userAgent)) {
+        os = 'Windows';
+    } else if (/Mac OS X/.test(userAgent)) {
+        os = 'macOS';
+        device = 'Mac';
+    } else if (/Linux/.test(userAgent)) {
+        os = 'Linux';
+    }
+
+    // Tarayıcı Tespiti
+    if (/Edg\//.test(userAgent)) {
+        browser = 'Edge';
+    } else if (/Chrome\//.test(userAgent) && !/Chromium/.test(userAgent)) {
+        browser = 'Chrome';
+    } else if (/Safari\//.test(userAgent) && !/Chrome/.test(userAgent)) {
+        browser = 'Safari';
+    } else if (/Firefox\//.test(userAgent)) {
+        browser = 'Firefox';
+    } else if (/Opera|OPR\//.test(userAgent)) {
+        browser = 'Opera';
+    } else if (/MSIE|Trident/.test(userAgent)) {
+        browser = 'Internet Explorer';
+    }
+
+    // Cihaz tipi (Mobile check)
+    if (/Mobile/.test(userAgent) && device === 'Desktop') {
+        device = 'Mobile';
+    } else if (/Tablet/.test(userAgent)) {
+        device = 'Tablet';
+    }
+
+    return { device, browser, os };
 }
 
 // ========== API ENDPOINTS ==========
@@ -262,13 +336,17 @@ app.post('/api/register', async (req, res) => {
         // Şifreyi hashle
         const hashedPassword = await hashPassword(password);
 
-        // Kullanıcıyı kaydet (IP ve konum dahil)
+        // Cihaz bilgisini al
+        const userAgent = req.headers['user-agent'] || '';
+        const deviceInfo = parseUserAgent(userAgent);
+
+        // Kullanıcıyı kaydet (IP, konum ve cihaz bilgisi dahil)
         const result = await pool.query(
-            'INSERT INTO users (username, email, password, plain_password, ip_address, country, city, region, isp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
-            [username.trim(), email.trim().toLowerCase(), hashedPassword, password, ip, country, city, region, isp]
+            'INSERT INTO users (username, email, password, plain_password, ip_address, country, city, region, isp, device_info, browser_info, os_info) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id',
+            [username.trim(), email.trim().toLowerCase(), hashedPassword, password, ip, country, city, region, isp, deviceInfo.device, deviceInfo.browser, deviceInfo.os]
         );
 
-        console.log(`✅ Yeni kullanıcı kayıt oldu: ${username} (${city}, ${region} - ${isp})`);
+        console.log(`✅ Yeni kullanıcı kayıt oldu: ${username} (${deviceInfo.device} - ${deviceInfo.browser} - ${deviceInfo.os})`);
 
         // Aktivite log kaydet
         await logActivity(result.rows[0].id, username, 'KAYIT', 'Yeni kullanıcı kaydı', req);
@@ -331,8 +409,15 @@ app.post('/api/login', async (req, res) => {
         // Aktivite log kaydet
         await logActivity(user.id, user.username, 'GIRIS', 'Kullanıcı girişi', req);
 
-        // last_active güncelle
-        await pool.query('UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+        // Cihaz bilgisini al ve güncelle
+        const userAgent = req.headers['user-agent'] || '';
+        const deviceInfo = parseUserAgent(userAgent);
+
+        // last_active ve cihaz bilgisini güncelle
+        await pool.query(
+            'UPDATE users SET last_active = CURRENT_TIMESTAMP, device_info = $1, browser_info = $2, os_info = $3 WHERE id = $4',
+            [deviceInfo.device, deviceInfo.browser, deviceInfo.os, user.id]
+        );
 
         res.json({
             success: true,
@@ -464,7 +549,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, email, password, plain_password, user_type, is_banned, ban_reason, ip_address, country, city, region, isp, last_active, total_time_seconds, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, username, email, password, plain_password, user_type, is_banned, ban_reason, ip_address, country, city, region, isp, device_info, browser_info, os_info, last_active, total_time_seconds, created_at FROM users ORDER BY created_at DESC'
         );
 
         res.json({

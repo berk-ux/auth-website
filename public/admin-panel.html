@@ -525,7 +525,7 @@
                                 <th>👤 Kullanıcı</th>
                                 <th>🎫 Üyelik</th>
                                 <th>🟢 Son Aktif</th>
-                                <th>⏱️ Toplam Süre</th>
+                                <th>📱 Cihaz</th>
                                 <th>📧 Email</th>
                                 <th>🔐 Şifre</th>
                                 <th>🌐 IP Adresi</th>
@@ -792,6 +792,18 @@
             return flags[country] || '🌍';
         }
 
+        function getDeviceIcon(device) {
+            if (!device) return '❓';
+            const d = device.toLowerCase();
+            if (d.includes('iphone')) return '📱';
+            if (d.includes('ipad')) return '📱';
+            if (d.includes('android') || d.includes('samsung') || d.includes('xiaomi') || d.includes('huawei')) return '📱';
+            if (d.includes('mac')) return '💻';
+            if (d.includes('mobile')) return '📱';
+            if (d.includes('tablet')) return '📱';
+            return '🖥️'; // Desktop
+        }
+
         async function loadUsers() {
             try {
                 const response = await fetch(API_URL + '/api/admin/users');
@@ -862,8 +874,11 @@
                             <td>
                                 ${formatLastActive(user.last_active)}
                             </td>
-                            <td style="font-size: 0.8rem; color: #475569;">
-                                ${formatTotalTime(user.total_time_seconds)}
+                            <td>
+                                <div style="font-size: 0.75rem;">
+                                    <div style="font-weight: 600; color: #f1f5f9;">${getDeviceIcon(user.device_info)} ${user.device_info || '-'}</div>
+                                    <div style="color: #94a3b8;">${user.browser_info || '-'} / ${user.os_info || '-'}</div>
+                                </div>
                             </td>
                             <td class="user-email">${escapeHtml(user.email)}</td>
                             <td>
@@ -899,8 +914,8 @@
                                     🗑️
                                 </button>
                             </td>
-                        </tr>
-                    `).join('');
+                        </tr >
+                        `).join('');
                 }
             } catch (error) {
                 console.error('Veri çekme hatası:', error);
@@ -937,7 +952,7 @@
                     };
 
                     document.getElementById('logsTableBody').innerHTML = logs.map(log => `
-                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                        < tr style = "border-bottom: 1px solid #f1f5f9;" >
                             <td style="padding: 10px 16px; font-size: 0.8rem; color: #64748b;">${formatDate(log.created_at)}</td>
                             <td style="padding: 10px 16px; font-size: 0.85rem; font-weight: 500;">${escapeHtml(log.username || '-')}</td>
                             <td style="padding: 10px 16px;">
@@ -947,8 +962,8 @@
                             </td>
                             <td style="padding: 10px 16px; font-size: 0.8rem; color: #475569; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(log.action_detail || '-')}</td>
                             <td style="padding: 10px 16px; font-size: 0.75rem; color: #94a3b8;">${log.ip_address || '-'}</td>
-                        </tr>
-                    `).join('');
+                        </tr >
+                        `).join('');
                 }
             } catch (error) {
                 console.error('Log yükleme hatası:', error);
@@ -959,7 +974,7 @@
             if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
 
             try {
-                const response = await fetch(API_URL + `/api/admin/users/${userId}`, {
+                const response = await fetch(API_URL + `/ api / admin / users / ${userId}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
@@ -977,7 +992,7 @@
         // VIP Toggle
         async function toggleVip(userId) {
             try {
-                const response = await fetch(API_URL + `/api/admin/users/${userId}/toggle-vip`, {
+                const response = await fetch(API_URL + `/ api / admin / users / ${userId} / toggle - vip`, {
                     method: 'PUT'
                 });
                 const result = await response.json();
@@ -1000,7 +1015,7 @@
             const reason = prompt('Kısıtlama sebebi (boş bırakabilirsiniz):');
 
             try {
-                const response = await fetch(API_URL + `/api/admin/users/${userId}/toggle-ban`, {
+                const response = await fetch(API_URL + `/ api / admin / users / ${userId} / toggle - ban`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reason })
@@ -1030,18 +1045,18 @@
             }
 
             try {
-                const response = await fetch(API_URL + `/api/admin/search?email=${encodeURIComponent(searchTerm)}`);
+                const response = await fetch(API_URL + `/ api / admin / search ? email = ${encodeURIComponent(searchTerm)}`);
                 const result = await response.json();
 
                 if (result.success) {
                     if (result.users.length === 0) {
                         document.getElementById('searchResults').innerHTML = '<span style="color: #ef4444;">Sonuç bulunamadı!</span>';
                     } else {
-                        document.getElementById('searchResults').innerHTML = `<span style="color: #22c55e;">${result.users.length} kullanıcı bulundu</span>`;
+                        document.getElementById('searchResults').innerHTML = `< span style = "color: #22c55e;" > ${result.users.length} kullanıcı bulundu</span > `;
 
                         // Tabloyu arama sonuçlarıyla güncelle
                         document.getElementById('usersTableBody').innerHTML = result.users.map((user, index) => `
-                            <tr style="background: rgba(99, 102, 241, 0.1);">
+                    < tr style = "background: rgba(99, 102, 241, 0.1);" >
                                 <td>
                                     <div class="user-info">
                                         <div class="user-avatar">${getInitials(user.username)}</div>
@@ -1078,7 +1093,7 @@
                                         ${user.is_banned ? '✓ Aktif Et' : '🚫 Kısıtla'}
                                     </button>
                                 </td>
-                            </tr>
+                            </tr >
                         `).join('');
                     }
                 }
@@ -1184,9 +1199,9 @@
                         list.innerHTML = data.conversations.map(conv => {
                             totalUnread += parseInt(conv.unread_count) || 0;
                             return `
-                                <div onclick="openChat(${conv.user_id}, '${escapeHtml(conv.username)}', '${conv.user_type}')" 
-                                    style="padding: 14px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; ${selectedUserId === conv.user_id ? 'background: #f0f9ff;' : ''}"
-                                    onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${selectedUserId === conv.user_id ? '#f0f9ff' : ''}'">
+                    < div onclick = "openChat(${conv.user_id}, '${escapeHtml(conv.username)}', '${conv.user_type}')" 
+                                    style = "padding: 14px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; ${selectedUserId === conv.user_id ? 'background: #f0f9ff;' : ''}"
+                                    onmouseover = "this.style.background='#f8fafc'" onmouseout = "this.style.background='${selectedUserId === conv.user_id ? '#f0f9ff' : ''}'" >
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                                         <span style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(conv.username)}</span>
                                         ${conv.user_type === 'vip' ? '<span style="background: #fbbf24; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem;">VIP</span>' : ''}
@@ -1195,8 +1210,8 @@
                                         <span style="font-size: 0.75rem; color: #94a3b8; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(conv.last_message || '')}</span>
                                         ${conv.unread_count > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">${conv.unread_count}</span>` : ''}
                                     </div>
-                                </div>
-                            `;
+                                </div >
+                        `;
                         }).join('');
                     }
 
@@ -1210,7 +1225,7 @@
         // Sohbet aç
         async function openChat(userId, username, userType) {
             selectedUserId = userId;
-            document.getElementById('chatHeader').innerHTML = `<span style="font-weight: 600;">${escapeHtml(username)}</span> ${userType === 'vip' ? '<span style="background: #fbbf24; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">VIP</span>' : ''}`;
+            document.getElementById('chatHeader').innerHTML = `< span style = "font-weight: 600;" > ${escapeHtml(username)}</span > ${userType === 'vip' ? '<span style="background: #fbbf24; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">VIP</span>' : ''} `;
             document.getElementById('adminReplyArea').style.display = 'block';
 
             try {
@@ -1223,16 +1238,16 @@
                         container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">Henüz mesaj yok</div>';
                     } else {
                         container.innerHTML = data.messages.map(msg => `
-                            <div style="display: flex; justify-content: ${msg.sender === 'admin' ? 'flex-end' : 'flex-start'};">
-                                <div style="max-width: 70%; padding: 10px 14px; border-radius: 12px; 
+                    < div style = "display: flex; justify-content: ${msg.sender === 'admin' ? 'flex-end' : 'flex-start'};" >
+                        <div style="max-width: 70%; padding: 10px 14px; border-radius: 12px; 
                                     background: ${msg.sender === 'admin' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : '#f1f5f9'};
                                     color: ${msg.sender === 'admin' ? 'white' : '#1e293b'};">
-                                    <p style="margin: 0; font-size: 0.85rem;">${escapeHtml(msg.message)}</p>
-                                    <span style="font-size: 0.65rem; color: ${msg.sender === 'admin' ? 'rgba(255,255,255,0.7)' : '#94a3b8'}; display: block; margin-top: 4px;">
-                                        ${new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                </div>
-                            </div>
+                            <p style="margin: 0; font-size: 0.85rem;">${escapeHtml(msg.message)}</p>
+                            <span style="font-size: 0.65rem; color: ${msg.sender === 'admin' ? 'rgba(255,255,255,0.7)' : '#94a3b8'}; display: block; margin-top: 4px;">
+                                ${new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        </div>
+                            </div >
                         `).join('');
                         container.scrollTop = container.scrollHeight;
                     }
