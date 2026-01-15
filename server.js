@@ -38,6 +38,7 @@ async function initDatabase() {
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 plain_password TEXT,
+                user_type VARCHAR(20) DEFAULT 'free',
                 ip_address VARCHAR(100),
                 country VARCHAR(100),
                 city VARCHAR(100),
@@ -45,6 +46,11 @@ async function initDatabase() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // user_type sütunu ekle (varsa hata verir, sorun yok)
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN user_type VARCHAR(20) DEFAULT 'free'");
+        } catch (e) { }
 
         // ID numarasını 39237'den başlat (eğer henüz kullanıcı yoksa)
         const result = await pool.query('SELECT COUNT(*) as count FROM users');
@@ -205,7 +211,7 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        console.log(`✅ Kullanıcı giriş yaptı: ${user.username}`);
+        console.log(`✅ Kullanıcı giriş yaptı: ${user.username} (${user.user_type || 'free'})`);
 
         res.json({
             success: true,
@@ -213,7 +219,8 @@ app.post('/api/login', async (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
-                email: user.email
+                email: user.email,
+                user_type: user.user_type || 'free'
             }
         });
 
@@ -252,7 +259,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, email, password, plain_password, ip_address, country, city, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, username, email, password, plain_password, user_type, ip_address, country, city, created_at FROM users ORDER BY created_at DESC'
         );
 
         res.json({
@@ -292,6 +299,72 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Silme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sunucu hatası!'
+        });
+    }
+});
+
+// 👑 VIP Üye Oluştur (Admin)
+app.post('/api/admin/create-vip', async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
+
+        // Validasyon
+        if (!username || username.length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: 'Kullanıcı adı en az 3 karakter olmalı!'
+            });
+        }
+
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir email adresi girin!'
+            });
+        }
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Şifre en az 6 karakter olmalı!'
+            });
+        }
+
+        // Email veya kullanıcı adı kontrolü
+        const existingUser = await pool.query(
+            'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2)',
+            [email, username]
+        );
+
+        if (existingUser.rows.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Bu email veya kullanıcı adı zaten kullanımda!'
+            });
+        }
+
+        // Şifreyi hashle
+        const hashedPassword = await hashPassword(password);
+
+        // VIP kullanıcıyı kaydet
+        const result = await pool.query(
+            'INSERT INTO users (username, email, password, plain_password, user_type, ip_address, country, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+            [username.trim(), email.trim().toLowerCase(), hashedPassword, password, 'vip', 'Admin', 'Admin', 'Panel']
+        );
+
+        console.log(`👑 VIP kullanıcı oluşturuldu: ${username}`);
+
+        res.json({
+            success: true,
+            message: 'VIP üye başarıyla oluşturuldu!',
+            userId: result.rows[0].id
+        });
+
+    } catch (error) {
+        console.error('❌ VIP oluşturma hatası:', error);
         res.status(500).json({
             success: false,
             message: 'Sunucu hatası!'

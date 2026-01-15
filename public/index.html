@@ -5,7 +5,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giriş Yap | Auth System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .login-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .login-tab {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            background: transparent;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .login-tab:hover {
+            color: #475569;
+        }
+
+        .login-tab.active {
+            background: white;
+            color: #6366f1;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .login-tab.vip.active {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+        }
+
+        .tab-icon {
+            font-size: 1.2rem;
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .vip-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .vip-info {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #fbbf24;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: #92400e;
+        }
+
+        .vip-info-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+    </style>
 </head>
 
 <body>
@@ -19,52 +115,91 @@
     <!-- Auth Container -->
     <div class="auth-container">
         <div class="auth-card">
-            <!-- Header -->
+            <!-- Logo ve Başlık -->
             <div class="auth-header">
                 <div class="auth-logo">🔐</div>
                 <h1 class="auth-title">Hoş Geldiniz</h1>
                 <p class="auth-subtitle">Hesabınıza giriş yapın</p>
             </div>
 
+            <!-- Login Tabs -->
+            <div class="login-tabs">
+                <button class="login-tab active" onclick="switchTab('free')">
+                    <span class="tab-icon">👤</span>
+                    Free Üye
+                </button>
+                <button class="login-tab vip" onclick="switchTab('vip')">
+                    <span class="tab-icon">👑</span>
+                    VIP Üye
+                </button>
+            </div>
+
             <!-- Alert Container -->
             <div id="alertContainer"></div>
 
-            <!-- Login Form -->
-            <form class="auth-form" id="loginForm">
-                <div class="form-group">
-                    <label class="form-label" for="identifier">Email veya Kullanıcı Adı</label>
-                    <span class="form-icon">👤</span>
-                    <input type="text" class="form-input" id="identifier" name="identifier"
-                        placeholder="ornek@email.com veya kullaniciadi" autocomplete="username" required>
+            <!-- Free Login Form -->
+            <div id="freeForm" class="login-form active">
+                <form class="auth-form" id="freeLoginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email veya Kullanıcı Adı</label>
+                        <span class="form-icon">📧</span>
+                        <input type="text" class="form-input" id="freeIdentifier"
+                            placeholder="Email veya kullanıcı adınız" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Şifre</label>
+                        <span class="form-icon">🔒</span>
+                        <input type="password" class="form-input" id="freePassword" placeholder="Şifrenizi girin"
+                            required>
+                        <button type="button" class="password-toggle"
+                            onclick="togglePassword('freePassword', this)">👁️</button>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <span class="btn-text">Giriş Yap</span>
+                    </button>
+                </form>
+
+                <div class="auth-links">
+                    <p class="auth-link">
+                        Hesabınız yok mu? <a href="register.html"><strong>Kayıt Olun</strong></a>
+                    </p>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="password">Şifre</label>
-                    <span class="form-icon">🔒</span>
-                    <input type="password" class="form-input" id="password" name="password" placeholder="••••••••"
-                        autocomplete="current-password" required>
-                    <button type="button" class="password-toggle"
-                        onclick="togglePassword('password', this)">👁️</button>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
-                    <span class="btn-text">Giriş Yap</span>
-                </button>
-            </form>
-
-            <!-- Divider -->
-            <div class="divider">
-                <span class="divider-line"></span>
-                <span class="divider-text">veya</span>
-                <span class="divider-line"></span>
             </div>
 
-            <!-- Links -->
-            <div class="auth-links">
-                <a href="register.html" class="auth-link">
-                    Hesabınız yok mu? <strong>Kayıt Olun</strong>
-                </a>
-                <br>
+            <!-- VIP Login Form -->
+            <div id="vipForm" class="login-form">
+                <div class="vip-info">
+                    <span class="vip-info-icon">👑</span>
+                    VIP üyelik sadece yetkili kişiler tarafından oluşturulur.
+                </div>
+
+                <form class="auth-form" id="vipLoginForm">
+                    <div class="form-group">
+                        <label class="form-label">VIP Email</label>
+                        <span class="form-icon">📧</span>
+                        <input type="email" class="form-input" id="vipEmail" placeholder="VIP email adresiniz" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">VIP Şifre</label>
+                        <span class="form-icon">🔒</span>
+                        <input type="password" class="form-input" id="vipPassword" placeholder="VIP şifrenizi girin"
+                            required>
+                        <button type="button" class="password-toggle"
+                            onclick="togglePassword('vipPassword', this)">👁️</button>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block"
+                        style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+                        <span class="btn-text">👑 VIP Giriş</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Admin Link -->
+            <div class="auth-links" style="margin-top: 30px;">
                 <a href="admin-login.html" class="admin-link">
                     🛡️ Admin Girişi
                 </a>
@@ -74,9 +209,7 @@
 
     <script>
         const API_URL = '';
-        const form = document.getElementById('loginForm');
         const alertContainer = document.getElementById('alertContainer');
-        const loginBtn = document.getElementById('loginBtn');
 
         function showAlert(type, message) {
             const iconMap = { success: '✓', error: '✕', warning: '⚠' };
@@ -89,47 +222,87 @@
             setTimeout(() => alertContainer.innerHTML = '', 5000);
         }
 
-        function togglePassword(id, btn) {
-            const input = document.getElementById(id);
+        function switchTab(tab) {
+            // Tab buttons
+            document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.login-tab${tab === 'vip' ? '.vip' : ':not(.vip)'}`).classList.add('active');
+
+            // Forms
+            document.getElementById('freeForm').classList.remove('active');
+            document.getElementById('vipForm').classList.remove('active');
+            document.getElementById(tab + 'Form').classList.add('active');
+
+            // Clear alerts
+            alertContainer.innerHTML = '';
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
             input.type = input.type === 'password' ? 'text' : 'password';
             btn.textContent = input.type === 'password' ? '👁️' : '🙈';
         }
 
-        function setLoading(btn, loading) {
-            btn.disabled = loading;
-            btn.classList.toggle('btn-loading', loading);
-        }
-
-        form.addEventListener('submit', async (e) => {
+        // Free Login
+        document.getElementById('freeLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const identifier = document.getElementById('identifier').value.trim();
-            const password = document.getElementById('password').value;
-
-            setLoading(loginBtn, true);
+            const identifier = document.getElementById('freeIdentifier').value;
+            const password = document.getElementById('freePassword').value;
 
             try {
                 const response = await fetch(API_URL + '/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier, password })
+                    body: JSON.stringify({ identifier, password, userType: 'free' })
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
+                    if (result.user.user_type === 'vip') {
+                        showAlert('warning', 'Bu bir VIP hesap. Lütfen VIP Üye sekmesinden giriş yapın.');
+                        return;
+                    }
                     showAlert('success', result.message);
                     localStorage.setItem('user', JSON.stringify(result.user));
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
+                    setTimeout(() => window.location.href = 'dashboard.html', 1000);
                 } else {
                     showAlert('error', result.message);
                 }
             } catch (error) {
-                showAlert('error', 'Bağlantı hatası!');
-            } finally {
-                setLoading(loginBtn, false);
+                showAlert('error', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+            }
+        });
+
+        // VIP Login
+        document.getElementById('vipLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const identifier = document.getElementById('vipEmail').value;
+            const password = document.getElementById('vipPassword').value;
+
+            try {
+                const response = await fetch(API_URL + '/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier, password, userType: 'vip' })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.user.user_type !== 'vip') {
+                        showAlert('warning', 'Bu hesap VIP değil. Lütfen Free Üye sekmesinden giriş yapın.');
+                        return;
+                    }
+                    showAlert('success', '👑 VIP giriş başarılı!');
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+                } else {
+                    showAlert('error', result.message);
+                }
+            } catch (error) {
+                showAlert('error', 'Bir hata oluştu. Lütfen tekrar deneyin.');
             }
         });
     </script>
