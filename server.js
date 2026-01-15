@@ -940,7 +940,7 @@ Operatör Geçmişi:
             // Sorgu log kaydet
             const userCheck = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
             const username = userCheck.rows[0]?.username || 'Bilinmiyor';
-            await logActivity(userId, username, 'SORGU', `${type.toUpperCase()} sorgusu: ${value.substring(0, 4)}***`, req);
+            await logActivity(userId, username, 'SORGU', `${type.toUpperCase()} sorgusu: ${value}`, req);
 
             res.json({
                 success: true,
