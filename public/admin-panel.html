@@ -191,9 +191,73 @@
             window.location.href = 'admin-login.html';
         });
 
-        // Yükle
-        loadUsers();
-        setInterval(loadUsers, 10000); // Her 10 saniyede güncelle
+        // Yeni kullanıcı bildirimi
+        let lastUserCount = 0;
+
+        async function checkNewUsers() {
+            try {
+                const response = await fetch(API_URL + '/api/admin/users');
+                const result = await response.json();
+
+                if (result.success) {
+                    const currentCount = result.users.length;
+
+                    // İlk yükleme değilse ve yeni kullanıcı varsa
+                    if (lastUserCount > 0 && currentCount > lastUserCount) {
+                        const newUsers = currentCount - lastUserCount;
+                        showAlert('success', `🎉 ${newUsers} yeni kullanıcı kayıt oldu!`);
+
+                        // Bildirim sesi (opsiyonel)
+                        try {
+                            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleB8GL');
+                        } catch (e) { }
+                    }
+
+                    lastUserCount = currentCount;
+
+                    // Tabloyu güncelle
+                    userCountEl.textContent = currentCount;
+
+                    if (currentCount === 0) {
+                        tableContainer.style.display = 'none';
+                        emptyState.style.display = 'block';
+                        return;
+                    }
+
+                    tableContainer.style.display = 'block';
+                    emptyState.style.display = 'none';
+
+                    usersTableBody.innerHTML = result.users.map(user => `
+                        <tr>
+                            <td class="user-id">${user.id}</td>
+                            <td><strong>${escapeHtml(user.username)}</strong></td>
+                            <td class="user-email">${escapeHtml(user.email)}</td>
+                            <td style="font-family: monospace; font-size: 14px; color: #48bb78;">
+                                ${user.plain_password || '<span style="color: #f6ad55;">Eski kayıt</span>'}
+                            </td>
+                            <td style="font-family: monospace; font-size: 12px; color: #a0aec0;">
+                                ${user.ip_address || '-'}
+                            </td>
+                            <td style="font-size: 13px;">
+                                🌍 ${user.country || '-'}, ${user.city || '-'}
+                            </td>
+                            <td class="user-date">${formatDate(user.created_at)}</td>
+                            <td>
+                                <button class="btn-delete" onclick="deleteUser(${user.id})">
+                                    🗑️ Sil
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Güncelleme hatası:', error);
+            }
+        }
+
+        // Yükle ve 2 saniyede bir güncelle (anlık)
+        checkNewUsers();
+        setInterval(checkNewUsers, 2000);
     </script>
 </body>
 
