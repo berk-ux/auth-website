@@ -105,6 +105,26 @@
 </head>
 
 <body>
+    <!-- Tarih ve Saat Widget'ı -->
+    <div id="dateTimeWidget" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        padding: 12px 20px;
+        border-radius: 16px;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        text-align: right;
+        z-index: 100;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    ">
+        <div id="timeDisplay" style="font-size: 1.5rem; font-weight: 700; letter-spacing: 1px;">--:--</div>
+        <div id="dateDisplay" style="font-size: 0.85rem; opacity: 0.9; margin-top: 2px;">--</div>
+    </div>
+
     <!-- Arka Plan Şekilleri -->
     <div class="bg-shapes">
         <div class="bg-shape bg-shape-1"></div>
@@ -305,6 +325,23 @@
                 showAlert('error', 'Bir hata oluştu. Lütfen tekrar deneyin.');
             }
         });
+
+        // Tarih ve Saat Güncelleme
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+            const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+            const time = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const day = days[now.getDay()];
+            const date = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+            document.getElementById('timeDisplay').textContent = time;
+            document.getElementById('dateDisplay').textContent = `${day}, ${date}`;
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
     </script>
 </body>
 
