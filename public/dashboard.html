@@ -606,8 +606,7 @@
                     TC Sorgu
                     <span class="menu-badge free">FREE</span>
                 </div>
-                <div class="submenu-item"
-                    onclick="showQuery('name', 'Ad Soyad Sorgu', 'Ad ve soyad ile sorgulama', 'Ad Soyad girin...')">
+                <div class="submenu-item" onclick="showNameQuery()">
                     Ad Soyad Sorgu
                     <span class="menu-badge free">FREE</span>
                 </div>
@@ -798,6 +797,66 @@
             </div>
         </div>
 
+        <!-- AD SOYAD SORGU SCREEN (Ayrı) -->
+        <div id="nameQueryScreen" style="display: none; padding: 24px;">
+            <div class="content-header">
+                <h1 class="page-title">👤 Ad Soyad Sorgu</h1>
+                <span class="header-badge"
+                    style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%); color: #fbbf24;">👑
+                    VIP</span>
+            </div>
+
+            <div class="query-card">
+                <h2 class="query-title" style="color: #fbbf24;">
+                    <span>👤</span>
+                    <span>Ad Soyad Sorgulama</span>
+                </h2>
+                <p class="query-description">Ad ve soyad girmek zorunludur.</p>
+
+                <!-- Ad ve Soyad Yan Yana -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label
+                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Ad
+                            <span style="color: #94a3b8; font-weight: 400;">(Zorunlu)</span></label>
+                        <input type="text" class="query-input" id="adInput" placeholder="Ad" style="margin-bottom: 0;">
+                    </div>
+                    <div>
+                        <label
+                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Soyad
+                            <span style="color: #94a3b8; font-weight: 400;">(Zorunlu)</span></label>
+                        <input type="text" class="query-input" id="soyadInput" placeholder="Soyad"
+                            style="margin-bottom: 0;">
+                    </div>
+                </div>
+
+                <!-- İl ve İlçe Yan Yana -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label
+                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">İl
+                            <span style="color: #94a3b8; font-weight: 400;">(Opsiyonel)</span></label>
+                        <input type="text" class="query-input" id="ilInput" placeholder="İl" style="margin-bottom: 0;">
+                    </div>
+                    <div>
+                        <label
+                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">İlçe
+                            <span style="color: #94a3b8; font-weight: 400;">(Opsiyonel)</span></label>
+                        <input type="text" class="query-input" id="ilceInput" placeholder="İlçe"
+                            style="margin-bottom: 0;">
+                    </div>
+                </div>
+
+                <button class="query-btn" onclick="executeNameQuery()"
+                    style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000;">🔍
+                    Sorgula</button>
+
+                <div class="result-section" id="nameResultSection">
+                    <div class="result-content" id="nameResultContent"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <footer class="footer">
             © 2026 <strong>BWEB</strong> - Tüm hakları gizli ve saklıdır.
@@ -949,6 +1008,63 @@
             document.getElementById('welcomeScreen').style.display = 'block';
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('liveQueryScreen').style.display = 'none';
+        }
+
+        // 👤 AD SOYAD SORGU SCREEN
+        function showNameQuery() {
+            if (!isVip) {
+                alert('Bu özellik sadece VIP üyeler için aktiftir!');
+                return;
+            }
+            document.getElementById('freeUserScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('queryScreen').style.display = 'none';
+            document.getElementById('liveQueryScreen').style.display = 'none';
+            document.getElementById('nameQueryScreen').style.display = 'block';
+
+            // Inputları temizle
+            document.getElementById('adInput').value = '';
+            document.getElementById('soyadInput').value = '';
+            document.getElementById('ilInput').value = '';
+            document.getElementById('ilceInput').value = '';
+            document.getElementById('nameResultSection').classList.remove('show');
+        }
+
+        async function executeNameQuery() {
+            const ad = document.getElementById('adInput').value.trim();
+            const soyad = document.getElementById('soyadInput').value.trim();
+            const il = document.getElementById('ilInput').value.trim();
+            const ilce = document.getElementById('ilceInput').value.trim();
+
+            if (!ad || !soyad) {
+                alert('Ad ve Soyad alanları zorunludur!');
+                return;
+            }
+
+            document.getElementById('nameResultContent').innerHTML = '⏳ Sorgulanıyor...';
+            document.getElementById('nameResultSection').classList.add('show');
+
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'name',
+                        value: { ad, soyad, il, ilce },
+                        userId: user.id
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('nameResultContent').innerHTML = result.data;
+                } else {
+                    document.getElementById('nameResultContent').innerHTML = `❌ Hata: ${result.message}`;
+                }
+            } catch (error) {
+                document.getElementById('nameResultContent').innerHTML = '❌ Bağlantı hatası. Lütfen tekrar deneyin.';
+            }
         }
 
         function showLiveQuery() {
