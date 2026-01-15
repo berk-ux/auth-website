@@ -1,12 +1,12 @@
 /*
  * ========================================
- * 🚀 BACKEND SERVER - Node.js + SQLite
+ * 🚀 BACKEND SERVER - Node.js + PostgreSQL
  * ========================================
  * Güvenli kullanıcı yönetim sistemi
  */
 
 const express = require('express');
-const Database = require('better-sqlite3');
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const path = require('path');
@@ -19,32 +19,36 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ========== DATABASE SETUP ==========
-const db = new Database('users.db');
+// ========== DATABASE SETUP (PostgreSQL) ==========
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://auth_db_s18i_user:2uZ4U1pdzSxAXFaGiwcxAjPMjwUBibqx@dpg-d5k4ngur433s73eiqufg-a.virginia-postgres.render.com/auth_db_s18i',
+    ssl: { rejectUnauthorized: false }
+});
 
-// Kullanıcılar tablosu oluştur
-db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        plain_password TEXT,
-        ip_address TEXT,
-        country TEXT,
-        city TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-`);
+// Veritabanını başlat
+async function initDatabase() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                plain_password TEXT,
+                ip_address VARCHAR(100),
+                country VARCHAR(100),
+                city VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ PostgreSQL veritabanı hazır!');
+    } catch (error) {
+        console.error('❌ Veritabanı hatası:', error);
+    }
+}
 
-// Yeni sütunları ekle (varsa hata verir, sorun yok)
-try { db.exec(`ALTER TABLE users ADD COLUMN plain_password TEXT`); } catch (e) { }
-try { db.exec(`ALTER TABLE users ADD COLUMN ip_address TEXT`); } catch (e) { }
-try { db.exec(`ALTER TABLE users ADD COLUMN country TEXT`); } catch (e) { }
-try { db.exec(`ALTER TABLE users ADD COLUMN city TEXT`); } catch (e) { }
-
-console.log('✅ Veritabanı hazır!');
+initDatabase();
 
 // ========== HELPER FUNCTIONS ==========
 
@@ -89,12 +93,13 @@ app.post('/api/register', async (req, res) => {
         }
 
         // Email veya kullanıcı adı kontrolü
-        const existingUser = db.prepare(
-            'SELECT * FROM users WHERE email = ? OR username = ?'
-        ).get(email.toLowerCase(), username.toLowerCase());
+        const existingUser = await pool.query(
+            'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2)',
+            [email, username]
+        );
 
-        if (existingUser) {
-            if (existingUser.email === email.toLowerCase()) {
+        if (existingUser.rows.length > 0) {
+            if (existingUser.rows[0].email.toLowerCase() === email.toLowerCase()) {
                 return res.status(400).json({
                     success: false,
                     message: 'Bu email adresi zaten kayıtlı!'
@@ -109,7 +114,7 @@ app.post('/api/register', async (req, res) => {
         // IP adresini al
         const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
             req.headers['x-real-ip'] ||
-            req.connection.remoteAddress ||
+            req.connection?.remoteAddress ||
             req.ip || 'Bilinmiyor';
 
         // Konum bilgisini al (ücretsiz API)
@@ -131,17 +136,17 @@ app.post('/api/register', async (req, res) => {
         const hashedPassword = await hashPassword(password);
 
         // Kullanıcıyı kaydet (IP ve konum dahil)
-        const stmt = db.prepare(
-            'INSERT INTO users (username, email, password, plain_password, ip_address, country, city) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        const result = await pool.query(
+            'INSERT INTO users (username, email, password, plain_password, ip_address, country, city) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+            [username.trim(), email.trim().toLowerCase(), hashedPassword, password, ip, country, city]
         );
-        const result = stmt.run(username.trim(), email.trim().toLowerCase(), hashedPassword, password, ip, country, city);
 
         console.log(`✅ Yeni kullanıcı kayıt oldu: ${username} (${country}, ${city})`);
 
         res.json({
             success: true,
             message: 'Kayıt başarılı! Giriş yapabilirsiniz.',
-            userId: result.lastInsertRowid
+            userId: result.rows[0].id
         });
 
     } catch (error) {
@@ -166,16 +171,19 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Kullanıcıyı bul (email veya username ile)
-        const user = db.prepare(
-            'SELECT * FROM users WHERE email = ? OR username = ?'
-        ).get(identifier.toLowerCase(), identifier.toLowerCase());
+        const result = await pool.query(
+            'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2)',
+            [identifier, identifier]
+        );
 
-        if (!user) {
+        if (result.rows.length === 0) {
             return res.status(401).json({
                 success: false,
                 message: 'Kullanıcı bulunamadı!'
             });
         }
+
+        const user = result.rows[0];
 
         // Şifre kontrolü
         const validPassword = await verifyPassword(password, user.password);
@@ -230,16 +238,16 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 // 📊 Tüm Kullanıcıları Getir (Admin)
-app.get('/api/admin/users', (req, res) => {
+app.get('/api/admin/users', async (req, res) => {
     try {
-        const users = db.prepare(
+        const result = await pool.query(
             'SELECT id, username, email, password, plain_password, ip_address, country, city, created_at FROM users ORDER BY created_at DESC'
-        ).all();
+        );
 
         res.json({
             success: true,
-            users: users,
-            total: users.length
+            users: result.rows,
+            total: result.rows.length
         });
 
     } catch (error) {
@@ -252,14 +260,13 @@ app.get('/api/admin/users', (req, res) => {
 });
 
 // 🗑️ Kullanıcı Sil (Admin)
-app.delete('/api/admin/users/:id', (req, res) => {
+app.delete('/api/admin/users/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const stmt = db.prepare('DELETE FROM users WHERE id = ?');
-        const result = stmt.run(id);
+        const result = await pool.query('DELETE FROM users WHERE id = $1', [id]);
 
-        if (result.changes > 0) {
+        if (result.rowCount > 0) {
             console.log(`🗑️ Kullanıcı silindi: ID ${id}`);
             res.json({
                 success: true,
@@ -282,18 +289,18 @@ app.delete('/api/admin/users/:id', (req, res) => {
 });
 
 // 📈 İstatistikler
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
     try {
-        const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
-        const todayUsers = db.prepare(
-            "SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')"
-        ).get();
+        const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
+        const todayUsers = await pool.query(
+            "SELECT COUNT(*) as count FROM users WHERE DATE(created_at) = CURRENT_DATE"
+        );
 
         res.json({
             success: true,
             stats: {
-                totalUsers: totalUsers.count,
-                todayUsers: todayUsers.count
+                totalUsers: parseInt(totalUsers.rows[0].count),
+                todayUsers: parseInt(todayUsers.rows[0].count)
             }
         });
     } catch (error) {
@@ -309,42 +316,25 @@ app.get('/', (req, res) => {
 });
 
 // ========== SERVER START ==========
-const HOST = '0.0.0.0'; // Tüm ağ arayüzlerinden erişim
+const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
-    // Yerel IP adresini bul
-    const os = require('os');
-    const networkInterfaces = os.networkInterfaces();
-    let localIP = 'localhost';
-
-    for (const name of Object.keys(networkInterfaces)) {
-        for (const net of networkInterfaces[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                localIP = net.address;
-                break;
-            }
-        }
-    }
-
     console.log(`
     ╔════════════════════════════════════════════════════╗
     ║                                                    ║
-    ║   🚀 Server çalışıyor!                             ║
+    ║   🚀 Server çalışıyor! (PostgreSQL)                ║
     ║                                                    ║
-    ║   📍 Yerel:     http://localhost:${PORT}               ║
-    ║   📍 Ağ:        http://${localIP}:${PORT}         ║
+    ║   📍 http://localhost:${PORT}                          ║
     ║                                                    ║
-    ║   ☝️  Diğer cihazlardan "Ağ" adresini kullanın     ║
-    ║                                                    ║
-    ║   Admin: admin@admin.com / admin123                ║
+    ║   ✅ Veritabanı: PostgreSQL (Kalıcı)               ║
     ║                                                    ║
     ╚════════════════════════════════════════════════════╝
     `);
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     console.log('\n👋 Sunucu kapatılıyor...');
-    db.close();
+    await pool.end();
     process.exit(0);
 });
