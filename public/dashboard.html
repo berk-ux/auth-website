@@ -745,9 +745,33 @@
                 </h2>
                 <p class="query-description" id="queryDescription">Sorgu açıklaması</p>
 
-                <label id="inputLabel"
-                    style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">TC</label>
-                <input type="text" class="query-input" id="queryInput" placeholder="Değer girin...">
+                <!-- Standart Tek Input -->
+                <div id="singleInputSection">
+                    <label id="inputLabel"
+                        style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">TC</label>
+                    <input type="text" class="query-input" id="queryInput" placeholder="Değer girin...">
+                </div>
+
+                <!-- Ad Soyad Özel Inputlar -->
+                <div id="nameInputSection" style="display: none;">
+                    <div style="margin-bottom: 12px;">
+                        <label
+                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">İsim</label>
+                        <input type="text" class="query-input" id="nameInput" placeholder="İsim girin...">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label
+                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Soyad</label>
+                        <input type="text" class="query-input" id="surnameInput" placeholder="Soyad girin...">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label
+                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">İl
+                            (Opsiyonel)</label>
+                        <input type="text" class="query-input" id="cityInput" placeholder="İl girin... (Opsiyonel)">
+                    </div>
+                </div>
+
                 <button class="query-btn" id="queryBtn" onclick="executeQuery()">🔍 Sorgula</button>
 
                 <div class="result-section" id="resultSection">
@@ -937,9 +961,23 @@
             document.getElementById('pageTitle').textContent = name;
             document.getElementById('queryName').textContent = name;
             document.getElementById('queryDescription').textContent = desc;
-            document.getElementById('queryInput').placeholder = placeholder;
-            document.getElementById('queryInput').value = '';
             document.getElementById('resultSection').classList.remove('show');
+
+            // 📋 Input section göster/gizle - sorgu türüne göre
+            if (type === 'name') {
+                // Ad Soyad sorgusu - 3 ayrı input
+                document.getElementById('singleInputSection').style.display = 'none';
+                document.getElementById('nameInputSection').style.display = 'block';
+                document.getElementById('nameInput').value = '';
+                document.getElementById('surnameInput').value = '';
+                document.getElementById('cityInput').value = '';
+            } else {
+                // Diğer sorgular - tek input
+                document.getElementById('singleInputSection').style.display = 'block';
+                document.getElementById('nameInputSection').style.display = 'none';
+                document.getElementById('queryInput').placeholder = placeholder;
+                document.getElementById('queryInput').value = '';
+            }
 
             // 🏷️ Label güncelle - sorgu türüne göre
             const labelMap = {
@@ -947,11 +985,11 @@
                 'name': 'Ad Soyad',
                 'address': 'TC Kimlik Numarası',
                 'family': 'TC Kimlik Numarası',
-                'gsm': 'GSM Numarası',
+                'gsm': 'GSM Girin',
                 'tcgsm': 'TC Kimlik Numarası',
                 'plaka': 'Araç Plakası',
                 'detayli': 'TC Kimlik Numarası',
-                'operator': 'GSM Numarası'
+                'operator': 'GSM Girin'
             };
 
             const iconMap = {
