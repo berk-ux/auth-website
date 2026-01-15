@@ -982,8 +982,11 @@
             document.getElementById('resultSection').classList.remove('show');
 
             // 📋 Input section göster/gizle - sorgu türüne göre
+            console.log('Sorgu tipi:', type); // DEBUG
+
             if (type === 'name') {
                 // Ad Soyad sorgusu - 4 ayrı input
+                console.log('Ad Soyad formu gösteriliyor'); // DEBUG
                 document.getElementById('singleInputSection').style.display = 'none';
                 document.getElementById('nameInputSection').style.display = 'block';
                 document.getElementById('nameInput').value = '';
