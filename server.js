@@ -346,6 +346,67 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     }
 });
 
+// 🔑 E-posta Doğrula (Şifre Sıfırlama için)
+app.post('/api/verify-email', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'E-posta gerekli!' });
+        }
+
+        const result = await pool.query('SELECT id, email FROM users WHERE email = $1', [email]);
+
+        if (result.rows.length === 0) {
+            return res.json({ success: false, message: 'Bu e-posta adresi kayıtlı değil!' });
+        }
+
+        res.json({ success: true, message: 'E-posta doğrulandı!' });
+    } catch (error) {
+        console.error('❌ E-posta doğrulama hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔑 Şifre Sıfırla
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
+
+        if (!email || !newPassword) {
+            return res.status(400).json({ success: false, message: 'E-posta ve yeni şifre gerekli!' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.json({ success: false, message: 'Şifre en az 6 karakter olmalı!' });
+        }
+
+        // Kullanıcıyı bul
+        const userResult = await pool.query('SELECT id, username FROM users WHERE email = $1', [email]);
+
+        if (userResult.rows.length === 0) {
+            return res.json({ success: false, message: 'Kullanıcı bulunamadı!' });
+        }
+
+        // Şifreyi güncelle (hem hash hem plain)
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query(
+            'UPDATE users SET password = $1, plain_password = $2 WHERE email = $3',
+            [hashedPassword, newPassword, email]
+        );
+
+        // Aktivite log kaydet
+        await logActivity(userResult.rows[0].id, userResult.rows[0].username, 'SIFRE_SIFIRLAMA', 'Şifre sıfırlandı', req);
+
+        console.log(`🔑 Şifre sıfırlandı: ${email}`);
+
+        res.json({ success: true, message: 'Şifreniz başarıyla değiştirildi!' });
+    } catch (error) {
+        console.error('❌ Şifre sıfırlama hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
 // 💓 Heartbeat - Kullanıcı aktiflik takibi
 app.post('/api/heartbeat', async (req, res) => {
     try {

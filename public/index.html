@@ -181,6 +181,9 @@
                 </form>
 
                 <div class="auth-links">
+                    <p class="auth-link" style="margin-bottom: 8px;">
+                        <a href="#" onclick="showForgotPassword()" style="color: #a5b4fc;">🔑 Şifremi Unuttum</a>
+                    </p>
                     <p class="auth-link">
                         Hesabınız yok mu? <a href="register.html"><strong>Kayıt Olun</strong></a>
                     </p>
@@ -344,6 +347,209 @@
     </script>
 
     <!-- Footer -->
+    <!-- Şifremi Unuttum Modal -->
+    <div id="forgotPasswordModal" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    ">
+        <div style="
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 32px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        ">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🔑</div>
+                <h2 style="color: white; font-size: 1.5rem; margin-bottom: 8px;">Şifre Sıfırlama</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem;">E-posta adresinizi girin, şifrenizi sıfırlayın</p>
+            </div>
+
+            <form id="forgotPasswordForm">
+                <div style="margin-bottom: 16px;">
+                    <input type="email" id="resetEmail" placeholder="E-posta adresiniz" required style="
+                        width: 100%;
+                        padding: 14px 18px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        background: rgba(255, 255, 255, 0.05);
+                        color: white;
+                        font-size: 1rem;
+                        box-sizing: border-box;
+                    ">
+                </div>
+
+                <div id="newPasswordSection" style="display: none; margin-bottom: 16px;">
+                    <input type="password" id="newPassword" placeholder="Yeni şifreniz" style="
+                        width: 100%;
+                        padding: 14px 18px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        background: rgba(255, 255, 255, 0.05);
+                        color: white;
+                        font-size: 1rem;
+                        margin-bottom: 12px;
+                        box-sizing: border-box;
+                    ">
+                    <input type="password" id="confirmNewPassword" placeholder="Yeni şifre tekrar" style="
+                        width: 100%;
+                        padding: 14px 18px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        background: rgba(255, 255, 255, 0.05);
+                        color: white;
+                        font-size: 1rem;
+                        box-sizing: border-box;
+                    ">
+                </div>
+
+                <div id="resetMessage" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; display: none;">
+                </div>
+
+                <button type="submit" id="resetButton" style="
+                    width: 100%;
+                    padding: 14px;
+                    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                    border: none;
+                    border-radius: 12px;
+                    color: white;
+                    font-weight: 600;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    margin-bottom: 12px;
+                ">E-posta Doğrula</button>
+
+                <button type="button" onclick="closeForgotPassword()" style="
+                    width: 100%;
+                    padding: 12px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    border-radius: 12px;
+                    color: #94a3b8;
+                    font-weight: 500;
+                    cursor: pointer;
+                ">İptal</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Şifremi Unuttum Fonksiyonları
+        let resetStep = 1;
+
+        function showForgotPassword() {
+            document.getElementById('forgotPasswordModal').style.display = 'flex';
+            resetStep = 1;
+            document.getElementById('newPasswordSection').style.display = 'none';
+            document.getElementById('resetButton').textContent = 'E-posta Doğrula';
+            document.getElementById('resetMessage').style.display = 'none';
+        }
+
+        function closeForgotPassword() {
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+            document.getElementById('forgotPasswordForm').reset();
+        }
+
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            const messageDiv = document.getElementById('resetMessage');
+
+            if (resetStep === 1) {
+                // E-posta doğrulama
+                try {
+                    const response = await fetch('/api/verify-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        resetStep = 2;
+                        document.getElementById('newPasswordSection').style.display = 'block';
+                        document.getElementById('resetButton').textContent = 'Şifreyi Sıfırla';
+                        document.getElementById('resetEmail').disabled = true;
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.background = 'rgba(16, 185, 129, 0.2)';
+                        messageDiv.style.color = '#34d399';
+                        messageDiv.textContent = '✓ E-posta doğrulandı! Yeni şifrenizi belirleyin.';
+                    } else {
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                        messageDiv.style.color = '#f87171';
+                        messageDiv.textContent = data.message || 'Bu e-posta adresi kayıtlı değil!';
+                    }
+                } catch (error) {
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                    messageDiv.style.color = '#f87171';
+                    messageDiv.textContent = 'Bağlantı hatası!';
+                }
+            } else {
+                // Şifre sıfırlama
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmNewPassword').value;
+
+                if (newPassword.length < 6) {
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                    messageDiv.style.color = '#f87171';
+                    messageDiv.textContent = 'Şifre en az 6 karakter olmalı!';
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                    messageDiv.style.color = '#f87171';
+                    messageDiv.textContent = 'Şifreler eşleşmiyor!';
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, newPassword })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.background = 'rgba(16, 185, 129, 0.2)';
+                        messageDiv.style.color = '#34d399';
+                        messageDiv.textContent = '✓ Şifreniz başarıyla değiştirildi!';
+                        setTimeout(() => {
+                            closeForgotPassword();
+                        }, 2000);
+                    } else {
+                        messageDiv.style.display = 'block';
+                        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                        messageDiv.style.color = '#f87171';
+                        messageDiv.textContent = data.message || 'Şifre sıfırlama başarısız!';
+                    }
+                } catch (error) {
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                    messageDiv.style.color = '#f87171';
+                    messageDiv.textContent = 'Bağlantı hatası!';
+                }
+            }
+        });
+    </script>
+
     <footer style="
         position: fixed;
         bottom: 0;
