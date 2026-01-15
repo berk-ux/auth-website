@@ -1036,9 +1036,9 @@
                 }
             } else {
                 typeEl.textContent = '○ Free Üyelik';
-                // Free kullanıcı için kilitli ekran göster
-                document.getElementById('freeUserScreen').style.display = 'block';
-                document.getElementById('welcomeScreen').style.display = 'none';
+                // Free kullanıcı için de welcome screen göster (VIP ile aynı)
+                document.getElementById('freeUserScreen').style.display = 'none';
+                document.getElementById('welcomeScreen').style.display = 'block';
             }
         }
 
@@ -1085,13 +1085,6 @@
         }
 
         function showWelcome() {
-            if (!isVip) {
-                document.getElementById('freeUserScreen').style.display = 'block';
-                document.getElementById('welcomeScreen').style.display = 'none';
-                document.getElementById('queryScreen').style.display = 'none';
-                document.getElementById('nameQueryScreen').style.display = 'none';
-                return;
-            }
             document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'block';
             document.getElementById('queryScreen').style.display = 'none';
@@ -1100,10 +1093,6 @@
 
         // 👤 AD SOYAD SORGU SCREEN
         function showNameQuery() {
-            if (!isVip) {
-                alert('Bu özellik sadece VIP üyeler için aktiftir!');
-                return;
-            }
             document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'none';
@@ -1155,10 +1144,6 @@
         }
 
         function showLiveQuery() {
-            if (!isVip) {
-                alert('Bu özellik sadece VIP üyeler için aktiftir!');
-                return;
-            }
             document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'none';
@@ -1170,10 +1155,6 @@
         }
 
         function showQuery(type, name, desc, placeholder, isVipQuery = false) {
-            if (!isVip) {
-                alert('Bu özellik sadece VIP üyeler için aktiftir!');
-                return;
-            }
             document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'block';
