@@ -92,6 +92,14 @@ async function initDatabase() {
             await pool.query("ALTER TABLE users ADD COLUMN isp VARCHAR(200)");
         } catch (e) { }
 
+        // last_active ve total_time sütunları ekle (aktivite takibi için)
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN total_time_seconds INTEGER DEFAULT 0");
+        } catch (e) { }
+
         // ID numarasını 39237'den başlat (eğer henüz kullanıcı yoksa)
         const result = await pool.query('SELECT COUNT(*) as count FROM users');
         if (parseInt(result.rows[0].count) === 0) {
@@ -297,6 +305,9 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         // Aktivite log kaydet
         await logActivity(user.id, user.username, 'GIRIS', 'Kullanıcı girişi', req);
 
+        // last_active güncelle
+        await pool.query('UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+
         res.json({
             success: true,
             message: 'Giriş başarılı!',
@@ -314,6 +325,27 @@ app.post('/api/login', loginLimiter, async (req, res) => {
             success: false,
             message: 'Sunucu hatası!'
         });
+    }
+});
+
+// 💓 Heartbeat - Kullanıcı aktiflik takibi
+app.post('/api/heartbeat', async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ success: false });
+        }
+
+        // last_active güncelle ve total_time'a 30 saniye ekle (heartbeat aralığı)
+        await pool.query(
+            'UPDATE users SET last_active = CURRENT_TIMESTAMP, total_time_seconds = total_time_seconds + 30 WHERE id = $1',
+            [userId]
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false });
     }
 });
 
@@ -343,7 +375,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, email, password, plain_password, user_type, ip_address, country, city, region, isp, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, username, email, password, plain_password, user_type, ip_address, country, city, region, isp, last_active, total_time_seconds, created_at FROM users ORDER BY created_at DESC'
         );
 
         res.json({

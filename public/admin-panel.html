@@ -372,12 +372,12 @@
                             <tr>
                                 <th>👤 Kullanıcı</th>
                                 <th>🎫 Üyelik</th>
+                                <th>🟢 Son Aktif</th>
+                                <th>⏱️ Toplam Süre</th>
                                 <th>📧 Email</th>
                                 <th>🔐 Şifre</th>
                                 <th>🌐 IP Adresi</th>
                                 <th>📍 Konum</th>
-                                <th>📡 ISP</th>
-                                <th>📅 Kayıt Tarihi</th>
                                 <th>⚙️ İşlem</th>
                             </tr>
                         </thead>
@@ -485,6 +485,41 @@
             });
         }
 
+        function formatLastActive(dateStr) {
+            if (!dateStr) return '<span style="color: #94a3b8;">-</span>';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 2) {
+                return '<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">🟢 Çevrimiçi</span>';
+            } else if (minutes < 60) {
+                return `<span style="color: #f59e0b; font-size: 0.8rem;">${minutes} dk önce</span>`;
+            } else if (hours < 24) {
+                return `<span style="color: #64748b; font-size: 0.8rem;">${hours} saat önce</span>`;
+            } else {
+                return `<span style="color: #94a3b8; font-size: 0.8rem;">${days} gün önce</span>`;
+            }
+        }
+
+        function formatTotalTime(seconds) {
+            if (!seconds || seconds < 60) return '< 1 dk';
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) {
+                return `${days}g ${hours % 24}s`;
+            } else if (hours > 0) {
+                return `${hours}s ${minutes % 60}dk`;
+            } else {
+                return `${minutes} dk`;
+            }
+        }
+
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
@@ -580,6 +615,12 @@
                             : '<span style="background: #e2e8f0; color: #64748b; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">Free</span>'
                         }
                             </td>
+                            <td>
+                                ${formatLastActive(user.last_active)}
+                            </td>
+                            <td style="font-size: 0.8rem; color: #475569;">
+                                ${formatTotalTime(user.total_time_seconds)}
+                            </td>
                             <td class="user-email">${escapeHtml(user.email)}</td>
                             <td>
                                 <span class="password-cell">
@@ -593,12 +634,10 @@
                                 <div class="location-cell">
                                     <span class="location-flag">${getCountryFlag(user.country)}</span>
                                     <span class="location-text">
-                                        ${user.city || '-'}${user.region ? ', ' + user.region : ''}, ${user.country || '-'}
+                                        ${user.city || '-'}, ${user.country || '-'}
                                     </span>
                                 </div>
                             </td>
-                            <td style="font-size: 0.75rem; color: #64748b; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${user.isp || '-'}</td>
-                            <td class="date-cell">${formatDate(user.created_at)}</td>
                             <td style="display: flex; gap: 8px;">
                                 <button onclick="toggleVip(${user.id})" title="${user.user_type === 'vip' ? 'VIP kaldır' : 'VIP yap'}"
                                     style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;

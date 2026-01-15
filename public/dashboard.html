@@ -670,6 +670,23 @@
             }
         }
 
+        // 💓 Heartbeat sistemi - her 30 saniyede aktiflik bildirimi
+        const API_URL = window.location.origin;
+
+        async function sendHeartbeat() {
+            try {
+                await fetch(API_URL + '/api/heartbeat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id })
+                });
+            } catch (e) { }
+        }
+
+        // İlk heartbeat ve her 30 saniyede bir gönder
+        sendHeartbeat();
+        setInterval(sendHeartbeat, 30000);
+
         let currentQueryType = '';
         let currentIsVip = false;
 
