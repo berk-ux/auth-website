@@ -25,20 +25,19 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// Rate Limiting - Brute force koruması
-const limiter = rateLimit({
+// Rate Limiting - Brute force koruması (sadece API'ler için)
+const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 dakika
-    max: 100, // IP başına maksimum 100 istek
+    max: 500, // IP başına maksimum 500 API isteği
     message: { success: false, message: 'Çok fazla istek! Lütfen 15 dakika sonra tekrar deneyin.' },
     standardHeaders: true,
     legacyHeaders: false
 });
-app.use(limiter);
 
 // Login için daha sıkı rate limiting
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 dakika
-    max: 10, // IP başına maksimum 10 giriş denemesi
+    max: 20, // IP başına maksimum 20 giriş denemesi
     message: { success: false, message: 'Çok fazla giriş denemesi! Lütfen 15 dakika sonra tekrar deneyin.' },
     standardHeaders: true,
     legacyHeaders: false
@@ -48,6 +47,9 @@ const loginLimiter = rateLimit({
 app.use(cors());
 app.use(express.json({ limit: '10kb' })); // Body boyutu limiti
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Rate limit'i sadece API route'larına uygula
+app.use('/api/', apiLimiter);
 
 // ========== DATABASE SETUP (PostgreSQL) ==========
 // External URL (Render dışından erişim için)
