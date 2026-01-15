@@ -121,6 +121,20 @@ async function initDatabase() {
             )
         `);
 
+        // Messages tablosu oluştur (kullanıcı-admin sohbet)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                username VARCHAR(255),
+                user_type VARCHAR(20) DEFAULT 'free',
+                message TEXT NOT NULL,
+                sender VARCHAR(20) NOT NULL,
+                is_read BOOLEAN DEFAULT false,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         console.log('✅ PostgreSQL veritabanı hazır!');
     } catch (error) {
         console.error('❌ Veritabanı hatası:', error);
@@ -722,6 +736,95 @@ app.get('/api/admin/logs', async (req, res) => {
             success: false,
             message: 'Sunucu hatası!'
         });
+    }
+});
+
+// 💬 Mesaj Gönder (Kullanıcı veya Admin)
+app.post('/api/messages', async (req, res) => {
+    try {
+        const { userId, username, userType, message, sender } = req.body;
+
+        if (!userId || !message || !sender) {
+            return res.status(400).json({ success: false, message: 'Eksik bilgi!' });
+        }
+
+        await pool.query(
+            'INSERT INTO messages (user_id, username, user_type, message, sender) VALUES ($1, $2, $3, $4, $5)',
+            [userId, username, userType || 'free', message, sender]
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ Mesaj gönderme hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 💬 Kullanıcının Mesajlarını Getir
+app.get('/api/messages/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const result = await pool.query(
+            'SELECT * FROM messages WHERE user_id = $1 ORDER BY created_at ASC',
+            [userId]
+        );
+
+        res.json({ success: true, messages: result.rows });
+    } catch (error) {
+        console.error('❌ Mesaj getirme hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 💬 Admin: Tüm Sohbetleri Getir (Free/VIP ayrımıyla)
+app.get('/api/admin/messages', async (req, res) => {
+    try {
+        const { userType } = req.query;
+
+        let query = `
+            SELECT DISTINCT ON (user_id) user_id, username, user_type, 
+                   (SELECT COUNT(*) FROM messages m2 WHERE m2.user_id = m.user_id AND m2.is_read = false AND m2.sender = 'user') as unread_count,
+                   (SELECT message FROM messages m3 WHERE m3.user_id = m.user_id ORDER BY created_at DESC LIMIT 1) as last_message,
+                   (SELECT created_at FROM messages m4 WHERE m4.user_id = m.user_id ORDER BY created_at DESC LIMIT 1) as last_message_time
+            FROM messages m
+        `;
+
+        if (userType && userType !== 'all') {
+            query += ` WHERE user_type = '${userType}'`;
+        }
+
+        query += ` ORDER BY user_id, last_message_time DESC`;
+
+        const result = await pool.query(query);
+
+        res.json({ success: true, conversations: result.rows });
+    } catch (error) {
+        console.error('❌ Sohbet listesi hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 💬 Admin: Belirli Kullanıcının Mesajlarını Getir
+app.get('/api/admin/messages/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Mesajları okundu olarak işaretle
+        await pool.query(
+            "UPDATE messages SET is_read = true WHERE user_id = $1 AND sender = 'user'",
+            [userId]
+        );
+
+        const result = await pool.query(
+            'SELECT * FROM messages WHERE user_id = $1 ORDER BY created_at ASC',
+            [userId]
+        );
+
+        res.json({ success: true, messages: result.rows });
+    } catch (error) {
+        console.error('❌ Mesaj getirme hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
     }
 });
 

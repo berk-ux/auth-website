@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | BERK Panel</title>
+    <title>Dashboard | BWEB</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -469,6 +469,11 @@
                 <span class="menu-icon">🏠</span>
                 Ana Sayfa
             </div>
+            <div class="menu-item" onclick="showChat()"
+                style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-left: 3px solid #6366f1;">
+                <span class="menu-icon">💬</span>
+                <span style="color: #a5b4fc; font-weight: 600;">Admin ile Sohbet</span>
+            </div>
             <div class="menu-item">
                 <span class="menu-icon">📊</span>
                 Kullanıcı Sıralaması
@@ -609,7 +614,7 @@
         <div id="welcomeScreen" style="display: none;">
             <div class="welcome-screen">
                 <div class="welcome-icon">👑</div>
-                <h1 class="welcome-title">BERK Panel'e Hoş Geldiniz!</h1>
+                <h1 class="welcome-title">BWEB'e Hoş Geldiniz!</h1>
                 <p class="welcome-text">Sol menüden bir sorgu seçerek başlayın.</p>
             </div>
         </div>
@@ -637,9 +642,41 @@
             </div>
         </div>
 
+        <!-- Chat Screen -->
+        <div id="chatScreen" style="display: none;">
+            <div class="content-header">
+                <h1 class="page-title">💬 Admin ile Sohbet</h1>
+                <span class="header-badge" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc;">DESTEK</span>
+            </div>
+
+            <div
+                style="background: #1a1a25; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); height: calc(100vh - 220px); display: flex; flex-direction: column;">
+                <!-- Messages Container -->
+                <div id="chatMessages"
+                    style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="text-align: center; color: #64748b; padding: 40px;">
+                        <div style="font-size: 3rem; margin-bottom: 12px;">💬</div>
+                        <p>Admin'e mesaj göndererek destek alabilirsiniz.</p>
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div
+                    style="padding: 16px; background: rgba(255, 255, 255, 0.02); border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; gap: 12px;">
+                    <input type="text" id="chatInput" placeholder="Mesajınızı yazın..."
+                        style="flex: 1; padding: 14px 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; background: rgba(255, 255, 255, 0.05); color: white; font-size: 0.95rem;"
+                        onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button onclick="sendMessage()"
+                        style="padding: 14px 28px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 12px; color: white; font-weight: 600; cursor: pointer;">
+                        Gönder
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <footer class="footer">
-            © 2026 <strong>BERK Panel</strong> - Tüm hakları gizli ve saklıdır.
+            © 2026 <strong>BWEB</strong> - Tüm hakları gizli ve saklıdır.
         </footer>
     </main>
 
@@ -813,6 +850,76 @@
 
         // İlk açılışta Mernis menüsünü aç
         toggleSubmenu('mernis');
+
+        // 💬 Sohbet Fonksiyonları
+        function showChat() {
+            document.getElementById('freeUserScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('queryScreen').style.display = 'none';
+            document.getElementById('chatScreen').style.display = 'block';
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(API_URL + '/api/messages/' + user.id);
+                const data = await response.json();
+
+                if (data.success && data.messages.length > 0) {
+                    const container = document.getElementById('chatMessages');
+                    container.innerHTML = data.messages.map(msg => `
+                        <div style="display: flex; justify-content: ${msg.sender === 'user' ? 'flex-end' : 'flex-start'};">
+                            <div style="max-width: 70%; padding: 12px 16px; border-radius: 16px; 
+                                background: ${msg.sender === 'user' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'rgba(255, 255, 255, 0.1)'};
+                                color: white;">
+                                <p style="margin: 0; font-size: 0.9rem;">${msg.message}</p>
+                                <span style="font-size: 0.7rem; color: rgba(255,255,255,0.6); display: block; margin-top: 4px; text-align: ${msg.sender === 'user' ? 'right' : 'left'};">
+                                    ${new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch (error) {
+                console.error('Mesaj yükleme hatası:', error);
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            try {
+                const response = await fetch(API_URL + '/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        username: user.username,
+                        userType: user.user_type,
+                        message: message,
+                        sender: 'user'
+                    })
+                });
+
+                if (response.ok) {
+                    input.value = '';
+                    loadMessages();
+                }
+            } catch (error) {
+                console.error('Mesaj gönderme hatası:', error);
+            }
+        }
+
+        // Her 5 saniyede mesajları güncelle
+        setInterval(() => {
+            if (document.getElementById('chatScreen').style.display === 'block') {
+                loadMessages();
+            }
+        }, 5000);
     </script>
 </body>
 
