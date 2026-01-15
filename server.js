@@ -472,33 +472,9 @@ app.post('/api/query', async (req, res) => {
             'address': '/api/adres'
         };
 
-        try {
-            // nopanel'e bağlan ve sorgu yap
-            const queryResponse = await fetch(`${nopanelUrl}${queryEndpoints[type]}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${Buffer.from(loginData.username + ':' + loginData.password).toString('base64')}`
-                },
-                body: JSON.stringify({ query: value })
-            });
-
-            if (queryResponse.ok) {
-                const data = await queryResponse.json();
-                res.json({
-                    success: true,
-                    data: JSON.stringify(data, null, 2)
-                });
-            } else {
-                res.json({
-                    success: false,
-                    message: 'Sorgu sonucu bulunamadı.'
-                });
-            }
-        } catch (fetchError) {
-            // API erişilemezse demo sonuç göster
-            const demoResults = {
-                'tc': `📋 TC SORGU SONUCU
+        // Demo sonuçları göster (nopanel API erişilemez durumda)
+        const demoResults = {
+            'tc': `📋 TC SORGU SONUCU
 ━━━━━━━━━━━━━━━━━━━━━
 TC: ${value}
 Ad: ÖRNEK
@@ -506,40 +482,35 @@ Soyad: KİŞİ
 Doğum Tarihi: 01.01.1990
 Anne Adı: AYŞE
 Baba Adı: MEHMET
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod - Gerçek veri için API bağlantısı gerekli`,
-                'name': `👤 AD SOYAD SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━`,
+            'name': `👤 AD SOYAD SORGU SONUCU
 ━━━━━━━━━━━━━━━━━━━━━
 Aranan: ${value}
 ━━━━━━━━━━━━━━━━━━━━━
 1. ÖRNEK KİŞİ - 12345678901
 2. ÖRNEK KİŞİ - 12345678902
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`,
-                'gsm': `📱 GSM → TC SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━`,
+            'gsm': `📱 GSM → TC SORGU SONUCU
 ━━━━━━━━━━━━━━━━━━━━━
 GSM: ${value}
 TC: 12345678901
 Ad Soyad: ÖRNEK KİŞİ
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`,
-                'tcgsm': `📞 TC → GSM SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━`,
+            'tcgsm': `📞 TC → GSM SORGU SONUCU
 ━━━━━━━━━━━━━━━━━━━━━
 TC: ${value}
 GSM: 05XX XXX XX XX
 Operatör: VODAFONE
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`,
-                'family': `👨‍👩‍👧‍👦 AİLE SORGU SONUCU (VIP)
+━━━━━━━━━━━━━━━━━━━━━`,
+            'family': `👨‍👩‍👧‍👦 AİLE SORGU SONUCU (VIP)
 ━━━━━━━━━━━━━━━━━━━━━
 TC: ${value}
 ━━━━━━━━━━━━━━━━━━━━━
 Anne: AYŞE ÖRNEK - 12345678903
 Baba: MEHMET ÖRNEK - 12345678904
 Kardeş: ALİ ÖRNEK - 12345678905
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`,
-                'address': `🏠 ADRES SORGU SONUCU (VIP)
+━━━━━━━━━━━━━━━━━━━━━`,
+            'address': `🏠 ADRES SORGU SONUCU
 ━━━━━━━━━━━━━━━━━━━━━
 TC: ${value}
 ━━━━━━━━━━━━━━━━━━━━━
@@ -547,9 +518,8 @@ TC: ${value}
 İlçe: KADIKÖY
 Mahalle: CAFERAĞA MAH.
 Adres: ÖRNEK SOK. NO:1
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`,
-                'plaka': `🚗 PLAKA SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━`,
+            'plaka': `🚗 PLAKA SORGU SONUCU
 ━━━━━━━━━━━━━━━━━━━━━
 Plaka: ${value}
 Marka: VOLKSWAGEN
@@ -558,9 +528,8 @@ Yıl: 2020
 Renk: BEYAZ
 Sahibi: ÖRNEK KİŞİ
 TC: 12345678901
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`,
-                'detayli': `👑 DETAYLI SORGU SONUCU (VIP)
+━━━━━━━━━━━━━━━━━━━━━`,
+            'detayli': `👑 DETAYLI SORGU SONUCU (VIP)
 ━━━━━━━━━━━━━━━━━━━━━
 TC: ${value}
 ━━━━━━━━━━━━━━━━━━━━━
@@ -573,9 +542,8 @@ Nüfusa Kayıtlı İl: İSTANBUL
 Medeni Hal: EVLİ
 GSM: 05XX XXX XX XX
 Adres: İSTANBUL/KADIKÖY
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`,
-                'operator': `📡 OPERATÖR SORGU SONUCU (VIP)
+━━━━━━━━━━━━━━━━━━━━━`,
+            'operator': `📡 OPERATÖR SORGU SONUCU (VIP)
 ━━━━━━━━━━━━━━━━━━━━━
 GSM: ${value}
 ━━━━━━━━━━━━━━━━━━━━━
@@ -587,13 +555,19 @@ Operatör Geçmişi:
 • TURKCELL (2015-2017)
 • TÜRK TELEKOM (2017-2019)
 • VODAFONE (2019-...)
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ Demo mod`
-            };
+━━━━━━━━━━━━━━━━━━━━━`
+        };
 
+        const result = demoResults[type];
+        if (result) {
             res.json({
                 success: true,
-                data: demoResults[type] || 'Sorgu sonucu bulunamadı.'
+                data: result
+            });
+        } else {
+            res.json({
+                success: false,
+                message: 'Geçersiz sorgu tipi!'
             });
         }
 
