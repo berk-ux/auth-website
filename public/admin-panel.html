@@ -392,6 +392,46 @@
                     <p class="empty-state-text">Henüz kayıtlı kullanıcı yok</p>
                     <p class="empty-state-hint">Yeni kullanıcılar kayıt oldukça burada görünecek</p>
                 </div>
+
+                <!-- Activity Logs Section -->
+                <div style="margin-top: 32px;">
+                    <h3
+                        style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        📋 Aktivite Logları
+                        <span id="logsCount"
+                            style="background: #6366f1; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem;">0</span>
+                    </h3>
+                    <div
+                        style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); max-height: 400px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: #f8fafc;">
+                                <tr>
+                                    <th
+                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        Zaman</th>
+                                    <th
+                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        Kullanıcı</th>
+                                    <th
+                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        İşlem</th>
+                                    <th
+                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        Detay</th>
+                                    <th
+                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <tr>
+                                    <td colspan="5" style="padding: 24px; text-align: center; color: #94a3b8;">
+                                        Yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -578,6 +618,54 @@
             }
         }
 
+        // Aktivite loglarını yükle
+        async function loadLogs() {
+            try {
+                const response = await fetch(API_URL + '/api/admin/logs');
+                const data = await response.json();
+
+                if (data.success) {
+                    const logs = data.logs;
+                    document.getElementById('logsCount').textContent = logs.length;
+
+                    if (logs.length === 0) {
+                        document.getElementById('logsTableBody').innerHTML = '<tr><td colspan="5" style="padding: 24px; text-align: center; color: #94a3b8;">Henüz aktivite yok</td></tr>';
+                        return;
+                    }
+
+                    const actionIcons = {
+                        'KAYIT': '📝',
+                        'GIRIS': '🔓',
+                        'SORGU': '🔍',
+                        'CIKIS': '🚪'
+                    };
+
+                    const actionColors = {
+                        'KAYIT': '#22c55e',
+                        'GIRIS': '#3b82f6',
+                        'SORGU': '#f59e0b',
+                        'CIKIS': '#ef4444'
+                    };
+
+                    document.getElementById('logsTableBody').innerHTML = logs.map(log => `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 10px 16px; font-size: 0.8rem; color: #64748b;">${formatDate(log.created_at)}</td>
+                            <td style="padding: 10px 16px; font-size: 0.85rem; font-weight: 500;">${escapeHtml(log.username || '-')}</td>
+                            <td style="padding: 10px 16px;">
+                                <span style="background: ${actionColors[log.action_type] || '#94a3b8'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">
+                                    ${actionIcons[log.action_type] || '⚡'} ${log.action_type}
+                                </span>
+                            </td>
+                            <td style="padding: 10px 16px; font-size: 0.8rem; color: #475569; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(log.action_detail || '-')}</td>
+                            <td style="padding: 10px 16px; font-size: 0.75rem; color: #94a3b8;">${log.ip_address || '-'}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Log yükleme hatası:', error);
+            }
+        }
+
         async function deleteUser(userId) {
             if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
 
@@ -656,7 +744,9 @@
 
         // İlk yükleme ve 2 saniyede bir güncelleme
         loadUsers();
+        loadLogs();
         setInterval(loadUsers, 2000);
+        setInterval(loadLogs, 5000); // Logları 5 saniyede bir güncelle
     </script>
 </body>
 

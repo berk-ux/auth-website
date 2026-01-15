@@ -67,6 +67,20 @@ async function initDatabase() {
             console.log('✅ ID numarası 39237\'den başlayacak');
         }
 
+        // Activity logs tablosu oluştur
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS activity_logs (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                username VARCHAR(255),
+                action_type VARCHAR(100) NOT NULL,
+                action_detail TEXT,
+                ip_address VARCHAR(100),
+                user_agent TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         console.log('✅ PostgreSQL veritabanı hazır!');
     } catch (error) {
         console.error('❌ Veritabanı hatası:', error);
@@ -76,6 +90,24 @@ async function initDatabase() {
 initDatabase();
 
 // ========== HELPER FUNCTIONS ==========
+
+// Aktivite log kaydet
+async function logActivity(userId, username, actionType, actionDetail, req) {
+    try {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
+            req.headers['x-real-ip'] ||
+            req.connection?.remoteAddress ||
+            req.ip || 'Bilinmiyor';
+        const userAgent = req.headers['user-agent'] || 'Bilinmiyor';
+
+        await pool.query(
+            'INSERT INTO activity_logs (user_id, username, action_type, action_detail, ip_address, user_agent) VALUES ($1, $2, $3, $4, $5, $6)',
+            [userId, username, actionType, actionDetail, ip, userAgent]
+        );
+    } catch (error) {
+        console.error('Log kayıt hatası:', error.message);
+    }
+}
 
 // Şifre hashleme (güvenli)
 async function hashPassword(password) {
@@ -172,6 +204,9 @@ app.post('/api/register', async (req, res) => {
 
         console.log(`✅ Yeni kullanıcı kayıt oldu: ${username} (${city}, ${region} - ${isp})`);
 
+        // Aktivite log kaydet
+        await logActivity(result.rows[0].id, username, 'KAYIT', 'Yeni kullanıcı kaydı', req);
+
         res.json({
             success: true,
             message: 'Kayıt başarılı! Giriş yapabilirsiniz.',
@@ -224,6 +259,9 @@ app.post('/api/login', async (req, res) => {
         }
 
         console.log(`✅ Kullanıcı giriş yaptı: ${user.username} (${user.user_type || 'free'})`);
+
+        // Aktivite log kaydet
+        await logActivity(user.id, user.username, 'GIRIS', 'Kullanıcı girişi', req);
 
         res.json({
             success: true,
@@ -572,6 +610,11 @@ Operatör Geçmişi:
 
         const result = demoResults[type];
         if (result) {
+            // Sorgu log kaydet
+            const userCheck = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            const username = userCheck.rows[0]?.username || 'Bilinmiyor';
+            await logActivity(userId, username, 'SORGU', `${type.toUpperCase()} sorgusu: ${value.substring(0, 4)}***`, req);
+
             res.json({
                 success: true,
                 data: result
@@ -587,6 +630,28 @@ Operatör Geçmişi:
 
     } catch (error) {
         console.error('❌ Sorgu hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sunucu hatası!'
+        });
+    }
+});
+
+// 📊 Aktivite Loglarını Getir (Admin)
+app.get('/api/admin/logs', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 100'
+        );
+
+        res.json({
+            success: true,
+            logs: result.rows,
+            total: result.rows.length
+        });
+
+    } catch (error) {
+        console.error('❌ Log listesi hatası:', error);
         res.status(500).json({
             success: false,
             message: 'Sunucu hatası!'
