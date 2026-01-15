@@ -447,7 +447,8 @@ app.post('/api/query', async (req, res) => {
         const userType = userCheck.rows[0]?.user_type || 'free';
 
         // VIP kontrolü
-        if ((type === 'family' || type === 'address') && userType !== 'vip') {
+        const vipQueries = ['family', 'address', 'detayli', 'operator'];
+        if (vipQueries.includes(type) && userType !== 'vip') {
             return res.status(403).json({
                 success: false,
                 message: 'Bu sorgu sadece VIP üyeler için aktiftir!'
@@ -546,6 +547,46 @@ TC: ${value}
 İlçe: KADIKÖY
 Mahalle: CAFERAĞA MAH.
 Adres: ÖRNEK SOK. NO:1
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ Demo mod`,
+                'plaka': `🚗 PLAKA SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━
+Plaka: ${value}
+Marka: VOLKSWAGEN
+Model: PASSAT
+Yıl: 2020
+Renk: BEYAZ
+Sahibi: ÖRNEK KİŞİ
+TC: 12345678901
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ Demo mod`,
+                'detayli': `👑 DETAYLI SORGU SONUCU (VIP)
+━━━━━━━━━━━━━━━━━━━━━
+TC: ${value}
+━━━━━━━━━━━━━━━━━━━━━
+Ad: ÖRNEK
+Soyad: KİŞİ
+Doğum Tarihi: 01.01.1990
+Anne Adı: AYŞE
+Baba Adı: MEHMET
+Nüfusa Kayıtlı İl: İSTANBUL
+Medeni Hal: EVLİ
+GSM: 05XX XXX XX XX
+Adres: İSTANBUL/KADIKÖY
+━━━━━━━━━━━━━━━━━━━━━
+⚠️ Demo mod`,
+                'operator': `📡 OPERATÖR SORGU SONUCU (VIP)
+━━━━━━━━━━━━━━━━━━━━━
+GSM: ${value}
+━━━━━━━━━━━━━━━━━━━━━
+Mevcut Operatör: VODAFONE
+Sicil No: 123456789
+Kayıt Tarihi: 15.03.2019
+━━━━━━━━━━━━━━━━━━━━━
+Operatör Geçmişi:
+• TURKCELL (2015-2017)
+• TÜRK TELEKOM (2017-2019)
+• VODAFONE (2019-...)
 ━━━━━━━━━━━━━━━━━━━━━
 ⚠️ Demo mod`
             };
