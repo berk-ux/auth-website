@@ -745,6 +745,8 @@
                 </h2>
                 <p class="query-description" id="queryDescription">Sorgu açıklaması</p>
 
+                <label id="inputLabel"
+                    style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">TC</label>
                 <input type="text" class="query-input" id="queryInput" placeholder="Değer girin...">
                 <button class="query-btn" id="queryBtn" onclick="executeQuery()">🔍 Sorgula</button>
 
@@ -938,6 +940,34 @@
             document.getElementById('queryInput').placeholder = placeholder;
             document.getElementById('queryInput').value = '';
             document.getElementById('resultSection').classList.remove('show');
+
+            // 🏷️ Label güncelle - sorgu türüne göre
+            const labelMap = {
+                'tc': 'TC Kimlik Numarası',
+                'name': 'Ad Soyad',
+                'address': 'TC Kimlik Numarası',
+                'family': 'TC Kimlik Numarası',
+                'gsm': 'GSM Numarası',
+                'tcgsm': 'TC Kimlik Numarası',
+                'plaka': 'Araç Plakası',
+                'detayli': 'TC Kimlik Numarası',
+                'operator': 'GSM Numarası'
+            };
+
+            const iconMap = {
+                'tc': '🆔',
+                'name': '👤',
+                'address': '🏠',
+                'family': '👨‍👩‍👧‍👦',
+                'gsm': '📱',
+                'tcgsm': '📲',
+                'plaka': '🚗',
+                'detayli': '📋',
+                'operator': '📡'
+            };
+
+            document.getElementById('inputLabel').textContent = labelMap[type] || 'Değer';
+            document.getElementById('queryIcon').textContent = iconMap[type] || '🔍';
 
             const badge = document.getElementById('queryBadge');
             const btn = document.getElementById('queryBtn');
