@@ -45,6 +45,14 @@ async function initDatabase() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // ID numarasını 39237'den başlat (eğer henüz kullanıcı yoksa)
+        const result = await pool.query('SELECT COUNT(*) as count FROM users');
+        if (parseInt(result.rows[0].count) === 0) {
+            await pool.query("ALTER SEQUENCE users_id_seq RESTART WITH 39237");
+            console.log('✅ ID numarası 39237\'den başlayacak');
+        }
+
         console.log('✅ PostgreSQL veritabanı hazır!');
     } catch (error) {
         console.error('❌ Veritabanı hatası:', error);
