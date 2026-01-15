@@ -376,6 +376,7 @@
                                 <th>🔐 Şifre</th>
                                 <th>🌐 IP Adresi</th>
                                 <th>📍 Konum</th>
+                                <th>📡 ISP</th>
                                 <th>📅 Kayıt Tarihi</th>
                                 <th>⚙️ İşlem</th>
                             </tr>
@@ -552,10 +553,11 @@
                                 <div class="location-cell">
                                     <span class="location-flag">${getCountryFlag(user.country)}</span>
                                     <span class="location-text">
-                                        ${user.city || '-'}, ${user.country || '-'}
+                                        ${user.city || '-'}${user.region ? ', ' + user.region : ''}, ${user.country || '-'}
                                     </span>
                                 </div>
                             </td>
+                            <td style="font-size: 0.75rem; color: #64748b; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${user.isp || '-'}</td>
                             <td class="date-cell">${formatDate(user.created_at)}</td>
                             <td style="display: flex; gap: 8px;">
                                 <button onclick="toggleVip(${user.id})" title="${user.user_type === 'vip' ? 'VIP kaldır' : 'VIP yap'}"

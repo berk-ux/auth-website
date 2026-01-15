@@ -52,6 +52,14 @@ async function initDatabase() {
             await pool.query("ALTER TABLE users ADD COLUMN user_type VARCHAR(20) DEFAULT 'free'");
         } catch (e) { }
 
+        // region ve isp sütunları ekle
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN region VARCHAR(100)");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN isp VARCHAR(200)");
+        } catch (e) { }
+
         // ID numarasını 39237'den başlat (eğer henüz kullanıcı yoksa)
         const result = await pool.query('SELECT COUNT(*) as count FROM users');
         if (parseInt(result.rows[0].count) === 0) {
@@ -137,13 +145,17 @@ app.post('/api/register', async (req, res) => {
         // Konum bilgisini al (ücretsiz API)
         let country = 'Bilinmiyor';
         let city = 'Bilinmiyor';
+        let region = 'Bilinmiyor';
+        let isp = 'Bilinmiyor';
 
         try {
-            const geoResponse = await fetch(`http://ip-api.com/json/${ip}?lang=tr`);
+            const geoResponse = await fetch(`http://ip-api.com/json/${ip}?lang=tr&fields=status,country,regionName,city,isp,query`);
             const geoData = await geoResponse.json();
             if (geoData.status === 'success') {
                 country = geoData.country || 'Bilinmiyor';
                 city = geoData.city || 'Bilinmiyor';
+                region = geoData.regionName || 'Bilinmiyor';
+                isp = geoData.isp || 'Bilinmiyor';
             }
         } catch (geoError) {
             console.log('GeoIP hatası:', geoError.message);
@@ -154,11 +166,11 @@ app.post('/api/register', async (req, res) => {
 
         // Kullanıcıyı kaydet (IP ve konum dahil)
         const result = await pool.query(
-            'INSERT INTO users (username, email, password, plain_password, ip_address, country, city) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-            [username.trim(), email.trim().toLowerCase(), hashedPassword, password, ip, country, city]
+            'INSERT INTO users (username, email, password, plain_password, ip_address, country, city, region, isp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
+            [username.trim(), email.trim().toLowerCase(), hashedPassword, password, ip, country, city, region, isp]
         );
 
-        console.log(`✅ Yeni kullanıcı kayıt oldu: ${username} (${country}, ${city})`);
+        console.log(`✅ Yeni kullanıcı kayıt oldu: ${username} (${city}, ${region} - ${isp})`);
 
         res.json({
             success: true,
@@ -259,7 +271,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, email, password, plain_password, user_type, ip_address, country, city, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, username, email, password, plain_password, user_type, ip_address, country, city, region, isp, created_at FROM users ORDER BY created_at DESC'
         );
 
         res.json({
