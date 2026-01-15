@@ -32,6 +32,78 @@
             top: 0;
             overflow-y: auto;
             z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        /* 👑 VIP ALTIN TEMA */
+        body.vip-theme {
+            background: linear-gradient(135deg, #1a1510 0%, #2d2516 50%, #1a1510 100%);
+        }
+
+        body.vip-theme .sidebar {
+            background: linear-gradient(180deg, #1a1510 0%, #2d2516 100%);
+            border-right: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        body.vip-theme .user-avatar {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+        }
+
+        body.vip-theme .menu-item:hover {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+        }
+
+        body.vip-theme .menu-item.active {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border-right: 3px solid #fbbf24;
+        }
+
+        body.vip-theme .main-content {
+            background: linear-gradient(135deg, #1a1510 0%, #2d2516 100%);
+        }
+
+        body.vip-theme .content-header {
+            border-bottom-color: rgba(251, 191, 36, 0.2);
+        }
+
+        body.vip-theme .page-title {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        body.vip-theme .verified-badge {
+            color: #fbbf24;
+        }
+
+        body.vip-theme .online-dot {
+            background: #fbbf24;
+            box-shadow: 0 0 10px #fbbf24;
+        }
+
+        body.vip-theme .online-status {
+            color: #fbbf24;
+        }
+
+        /* VIP Altın Parıltı Animasyonu */
+        @keyframes goldShimmer {
+            0% {
+                background-position: -200% center;
+            }
+
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        body.vip-theme .vip-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.3), transparent);
+            background-size: 200% 100%;
+            animation: goldShimmer 3s infinite;
         }
 
         .sidebar::-webkit-scrollbar {
@@ -730,6 +802,16 @@
                 // VIP kullanıcı için welcome screen göster
                 document.getElementById('freeUserScreen').style.display = 'none';
                 document.getElementById('welcomeScreen').style.display = 'block';
+
+                // 👑 VIP ALTIN TEMA AKTİFLEŞTİR
+                document.body.classList.add('vip-theme');
+                document.getElementById('userAvatar').style.boxShadow = '0 0 20px rgba(251, 191, 36, 0.6)';
+
+                // VIP hoşgeldin mesajı güncelle
+                const welcomeTitle = document.querySelector('#welcomeScreen h2');
+                if (welcomeTitle) {
+                    welcomeTitle.innerHTML = '👑 <span style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">VIP Hoş Geldiniz!</span>';
+                }
             } else {
                 typeEl.textContent = '○ Free Üyelik';
                 // Free kullanıcı için kilitli ekran göster
