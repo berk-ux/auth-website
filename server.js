@@ -104,6 +104,14 @@ async function initDatabase() {
             await pool.query("ALTER TABLE users ADD COLUMN total_time_seconds INTEGER DEFAULT 0");
         } catch (e) { }
 
+        // is_banned sütunu ekle (kısıtlı kullanıcılar için)
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN is_banned BOOLEAN DEFAULT false");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE users ADD COLUMN ban_reason TEXT");
+        } catch (e) { }
+
         // ID numarasını 39237'den başlat (eğer henüz kullanıcı yoksa)
         const result = await pool.query('SELECT COUNT(*) as count FROM users');
         if (parseInt(result.rows[0].count) === 0) {
@@ -309,6 +317,14 @@ app.post('/api/login', async (req, res) => {
 
         const user = result.rows[0];
 
+        // 🚫 BAN KONTROLÜ
+        if (user.is_banned) {
+            return res.status(403).json({
+                success: false,
+                message: 'Hesabınız kısıtlanmıştır! Sebep: ' + (user.ban_reason || 'Belirtilmemiş')
+            });
+        }
+
         // Şifre kontrolü
         const validPassword = await verifyPassword(password, user.password);
         if (!validPassword) {
@@ -454,7 +470,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/users', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, email, password, plain_password, user_type, ip_address, country, city, region, isp, last_active, total_time_seconds, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, username, email, password, plain_password, user_type, is_banned, ban_reason, ip_address, country, city, region, isp, last_active, total_time_seconds, created_at FROM users ORDER BY created_at DESC'
         );
 
         res.json({
@@ -598,6 +614,85 @@ app.put('/api/admin/users/:id/toggle-vip', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Tip değiştirme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sunucu hatası!'
+        });
+    }
+});
+
+// 🚫 Kullanıcı Ban Toggle (Admin)
+app.put('/api/admin/users/:id/toggle-ban', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        // Mevcut kullanıcıyı bul
+        const user = await pool.query('SELECT is_banned, username FROM users WHERE id = $1', [id]);
+
+        if (user.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Kullanıcı bulunamadı!'
+            });
+        }
+
+        // Ban durumunu değiştir
+        const currentBan = user.rows[0].is_banned || false;
+        const newBan = !currentBan;
+        const banReason = newBan ? (reason || 'Admin tarafından kısıtlandı') : null;
+
+        await pool.query(
+            'UPDATE users SET is_banned = $1, ban_reason = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+            [newBan, banReason, id]
+        );
+
+        console.log(`🚫 Kullanıcı ${user.rows[0].username}: ${currentBan ? 'Ban kaldırıldı' : 'Ban uygulandı'}`);
+
+        res.json({
+            success: true,
+            message: newBan ? 'Kullanıcı kısıtlandı!' : 'Kısıtlama kaldırıldı!',
+            isBanned: newBan
+        });
+
+    } catch (error) {
+        console.error('❌ Ban değiştirme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sunucu hatası!'
+        });
+    }
+});
+
+// 🔍 E-posta ile Kullanıcı Ara (Admin)
+app.get('/api/admin/search', async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email || email.length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: 'Arama için en az 3 karakter girin!'
+            });
+        }
+
+        const result = await pool.query(
+            `SELECT id, username, email, user_type, is_banned, ban_reason, ip_address, country, city, last_active, created_at 
+             FROM users 
+             WHERE LOWER(email) LIKE LOWER($1) OR LOWER(username) LIKE LOWER($1)
+             ORDER BY created_at DESC 
+             LIMIT 50`,
+            [`%${email}%`]
+        );
+
+        res.json({
+            success: true,
+            users: result.rows,
+            total: result.rows.length
+        });
+
+    } catch (error) {
+        console.error('❌ Arama hatası:', error);
         res.status(500).json({
             success: false,
             message: 'Sunucu hatası!'

@@ -490,6 +490,33 @@
                     </form>
                 </div>
 
+                <!-- 🔍 Kullanıcı Arama Kutusu -->
+                <div
+                    style="background: linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                    <h3 style="margin: 0 0 16px 0; color: #a5b4fc; font-size: 1.1rem;">
+                        🔍 Kullanıcı Ara
+                    </h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <label
+                                style="display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;">E-posta
+                                veya Kullanıcı Adı</label>
+                            <input type="text" id="searchInput" placeholder="E-posta veya kullanıcı adı yazın..."
+                                style="width: 100%; padding: 12px 16px; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 10px; font-size: 0.9rem; background: rgba(255,255,255,0.05); color: white;"
+                                onkeypress="if(event.key === 'Enter') searchUsers()">
+                        </div>
+                        <button onclick="searchUsers()"
+                            style="padding: 12px 24px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                            🔍 Ara
+                        </button>
+                        <button onclick="clearSearch()"
+                            style="padding: 12px 24px; background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                            ✕ Temizle
+                        </button>
+                    </div>
+                    <div id="searchResults" style="margin-top: 12px; font-size: 0.85rem; color: #94a3b8;"></div>
+                </div>
+
                 <!-- Users Table -->
                 <div class="table-container" id="tableContainer">
                     <table class="users-table">
@@ -825,9 +852,11 @@
                                 </div>
                             </td>
                             <td>
-                                ${user.user_type === 'vip'
-                            ? '<span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">👑 VIP</span>'
-                            : '<span style="background: #e2e8f0; color: #64748b; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">Free</span>'
+                                ${user.is_banned
+                            ? '<span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">🚫 BANNED</span>'
+                            : (user.user_type === 'vip'
+                                ? '<span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">👑 VIP</span>'
+                                : '<span style="background: #e2e8f0; color: #64748b; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">Free</span>')
                         }
                             </td>
                             <td>
@@ -853,12 +882,18 @@
                                     </span>
                                 </div>
                             </td>
-                            <td style="display: flex; gap: 8px;">
+                            <td style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button onclick="toggleVip(${user.id})" title="${user.user_type === 'vip' ? 'VIP kaldır' : 'VIP yap'}"
                                     style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
                                     background: ${user.user_type === 'vip' ? '#e2e8f0' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'};
                                     color: ${user.user_type === 'vip' ? '#64748b' : 'white'};">
                                     ${user.user_type === 'vip' ? '👤 Free' : '👑 VIP'}
+                                </button>
+                                <button onclick="toggleBan(${user.id})" title="${user.is_banned ? 'Kısıtlamayı kaldır' : 'Kullanıcıyı kısıtla'}"
+                                    style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+                                    background: ${user.is_banned ? '#22c55e' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
+                                    color: white;">
+                                    ${user.is_banned ? '✓ Aktif Et' : '🚫 Kısıtla'}
                                 </button>
                                 <button class="btn-delete" onclick="deleteUser(${user.id})">
                                     🗑️
@@ -959,6 +994,110 @@
         }
 
         window.toggleVip = toggleVip;
+
+        // 🚫 Ban Toggle
+        async function toggleBan(userId) {
+            const reason = prompt('Kısıtlama sebebi (boş bırakabilirsiniz):');
+
+            try {
+                const response = await fetch(API_URL + `/api/admin/users/${userId}/toggle-ban`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message);
+                    loadUsers();
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Ban toggle hatası:', error);
+            }
+        }
+
+        window.toggleBan = toggleBan;
+
+        // 🔍 Kullanıcı Arama
+        async function searchUsers() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+
+            if (searchTerm.length < 3) {
+                document.getElementById('searchResults').innerHTML = '<span style="color: #f59e0b;">En az 3 karakter girin!</span>';
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + `/api/admin/search?email=${encodeURIComponent(searchTerm)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.users.length === 0) {
+                        document.getElementById('searchResults').innerHTML = '<span style="color: #ef4444;">Sonuç bulunamadı!</span>';
+                    } else {
+                        document.getElementById('searchResults').innerHTML = `<span style="color: #22c55e;">${result.users.length} kullanıcı bulundu</span>`;
+
+                        // Tabloyu arama sonuçlarıyla güncelle
+                        document.getElementById('usersTableBody').innerHTML = result.users.map((user, index) => `
+                            <tr style="background: rgba(99, 102, 241, 0.1);">
+                                <td>
+                                    <div class="user-info">
+                                        <div class="user-avatar">${getInitials(user.username)}</div>
+                                        <div>
+                                            <div class="user-name">${escapeHtml(user.username)}</div>
+                                            <div style="font-size: 0.75rem; color: #94a3b8;">ID: ${user.id}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    ${user.is_banned
+                                ? '<span style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">🚫 BANNED</span>'
+                                : (user.user_type === 'vip'
+                                    ? '<span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">👑 VIP</span>'
+                                    : '<span style="background: #e2e8f0; color: #64748b; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">Free</span>')
+                            }
+                                </td>
+                                <td>${formatLastActive(user.last_active)}</td>
+                                <td colspan="3" class="user-email">${escapeHtml(user.email)}</td>
+                                <td>
+                                    <span class="ip-cell">${user.ip_address || '-'}</span>
+                                </td>
+                                <td>
+                                    <div class="location-cell">
+                                        <span class="location-flag">${getCountryFlag(user.country)}</span>
+                                        <span class="location-text">${user.city || '-'}, ${user.country || '-'}</span>
+                                    </div>
+                                </td>
+                                <td style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button onclick="toggleBan(${user.id})" title="${user.is_banned ? 'Kısıtlamayı kaldır' : 'Kullanıcıyı kısıtla'}"
+                                        style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+                                        background: ${user.is_banned ? '#22c55e' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
+                                        color: white;">
+                                        ${user.is_banned ? '✓ Aktif Et' : '🚫 Kısıtla'}
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Arama hatası:', error);
+                document.getElementById('searchResults').innerHTML = '<span style="color: #ef4444;">Arama hatası!</span>';
+            }
+        }
+
+        window.searchUsers = searchUsers;
+
+        // Temizle butonu
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            loadUsers(); // Tüm kullanıcıları yeniden yükle
+        }
+
+        window.clearSearch = clearSearch;
 
         // VIP Üye Oluşturma
         document.getElementById('vipForm').addEventListener('submit', async (e) => {
