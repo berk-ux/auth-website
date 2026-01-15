@@ -50,7 +50,8 @@
         .hamburger-btn {
             position: fixed;
             top: 20px;
-            left: 20px;
+            left: 225px;
+            /* Sidebar açıkken sağ üst köşe */
             width: 45px;
             height: 45px;
             background: rgba(30, 30, 40, 0.95);
@@ -64,6 +65,12 @@
             cursor: pointer;
             z-index: 200;
             transition: all 0.3s ease;
+        }
+
+        /* Sidebar kapalıyken hamburger sol üstte */
+        .sidebar.collapsed~.hamburger-btn,
+        body:has(.sidebar.collapsed) .hamburger-btn {
+            left: 20px;
         }
 
         .hamburger-btn:hover {
@@ -1058,7 +1065,15 @@
         // ☰ Sidebar Toggle Fonksiyonu
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
+            const hamburger = document.getElementById('hamburgerBtn');
             sidebar.classList.toggle('collapsed');
+
+            // Hamburger buton pozisyonunu güncelle
+            if (sidebar.classList.contains('collapsed')) {
+                hamburger.style.left = '20px'; // Sol üst
+            } else {
+                hamburger.style.left = '225px'; // Sidebar sağ üst köşesi
+            }
         }
 
         function toggleSubmenu(id) {
