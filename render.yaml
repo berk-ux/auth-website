@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: auth-website
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: auth-db
+          property: connectionString
+
+databases:
+  - name: auth-db
+    plan: free
