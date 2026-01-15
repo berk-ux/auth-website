@@ -10,13 +10,43 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const validator = require('validator');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// 🛡️ GÜVENLİK MIDDLEWARE'LERİ
+
+// Helmet - HTTP güvenlik başlıkları
+app.use(helmet({
+    contentSecurityPolicy: false, // CSP'yi devre dışı bırak (inline script'ler için)
+    crossOriginEmbedderPolicy: false
+}));
+
+// Rate Limiting - Brute force koruması
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 dakika
+    max: 100, // IP başına maksimum 100 istek
+    message: { success: false, message: 'Çok fazla istek! Lütfen 15 dakika sonra tekrar deneyin.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use(limiter);
+
+// Login için daha sıkı rate limiting
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 dakika
+    max: 10, // IP başına maksimum 10 giriş denemesi
+    message: { success: false, message: 'Çok fazla giriş denemesi! Lütfen 15 dakika sonra tekrar deneyin.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Diğer middleware'ler
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10kb' })); // Body boyutu limiti
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ========== DATABASE SETUP (PostgreSQL) ==========
@@ -222,11 +252,13 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// 🔓 Kullanıcı Giriş
-app.post('/api/login', async (req, res) => {
+// 🔓 Kullanıcı Giriş (rate limited)
+app.post('/api/login', loginLimiter, async (req, res) => {
     try {
-        const { identifier, password } = req.body;
+        let { identifier, password } = req.body;
 
+        // Input sanitization
+        if (identifier) identifier = validator.escape(identifier.trim());
         if (!identifier || !password) {
             return res.status(400).json({
                 success: false,
