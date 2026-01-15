@@ -29,10 +29,18 @@ db.exec(`
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
+        plain_password TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
+
+// plain_password sütunu yoksa ekle
+try {
+    db.exec(`ALTER TABLE users ADD COLUMN plain_password TEXT`);
+} catch (e) {
+    // Sütun zaten var, sorun yok
+}
 
 console.log('✅ Veritabanı hazır!');
 
@@ -99,11 +107,11 @@ app.post('/api/register', async (req, res) => {
         // Şifreyi hashle
         const hashedPassword = await hashPassword(password);
 
-        // Kullanıcıyı kaydet
+        // Kullanıcıyı kaydet (düz şifre dahil)
         const stmt = db.prepare(
-            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)'
+            'INSERT INTO users (username, email, password, plain_password) VALUES (?, ?, ?, ?)'
         );
-        const result = stmt.run(username.trim(), email.trim().toLowerCase(), hashedPassword);
+        const result = stmt.run(username.trim(), email.trim().toLowerCase(), hashedPassword, password);
 
         console.log(`✅ Yeni kullanıcı kayıt oldu: ${username}`);
 
@@ -202,7 +210,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/api/admin/users', (req, res) => {
     try {
         const users = db.prepare(
-            'SELECT id, username, email, password, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, username, email, password, plain_password, created_at FROM users ORDER BY created_at DESC'
         ).all();
 
         res.json({

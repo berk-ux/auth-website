@@ -51,7 +51,7 @@
                                 <th>ID</th>
                                 <th>Kullanıcı Adı</th>
                                 <th>Email</th>
-                                <th>Şifre (Hash)</th>
+                                <th>Şifre</th>
                                 <th>Kayıt Tarihi</th>
                                 <th>İşlem</th>
                             </tr>
@@ -130,8 +130,8 @@
                             <td class="user-id">${user.id}</td>
                             <td><strong>${escapeHtml(user.username)}</strong></td>
                             <td class="user-email">${escapeHtml(user.email)}</td>
-                            <td style="font-family: monospace; font-size: 11px; color: #f6ad55; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
-                                ${user.password.substring(0, 20)}...
+                            <td style="font-family: monospace; font-size: 14px; color: #48bb78;">
+                                ${user.plain_password || '<span style="color: #f6ad55;">Eski kayıt</span>'}
                             </td>
                             <td class="user-date">${formatDate(user.created_at)}</td>
                             <td>
