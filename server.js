@@ -20,9 +20,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ========== DATABASE SETUP (PostgreSQL) ==========
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://auth_db_s18i_user:2uZ4U1pdzSxAXFaGiwcxAjPMjwUBibqx@dpg-d5k4ngur433s73eiqufg-a/auth_db_s18i';
+
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://auth_db_s18i_user:2uZ4U1pdzSxAXFaGiwcxAjPMjwUBibqx@dpg-d5k4ngur433s73eiqufg-a.virginia-postgres.render.com/auth_db_s18i',
-    ssl: { rejectUnauthorized: false }
+    connectionString: DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 // Veritabanını başlat
