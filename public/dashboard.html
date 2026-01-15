@@ -983,12 +983,13 @@
 
             // 📋 Input section göster/gizle - sorgu türüne göre
             if (type === 'name') {
-                // Ad Soyad sorgusu - 3 ayrı input
+                // Ad Soyad sorgusu - 4 ayrı input
                 document.getElementById('singleInputSection').style.display = 'none';
                 document.getElementById('nameInputSection').style.display = 'block';
                 document.getElementById('nameInput').value = '';
                 document.getElementById('surnameInput').value = '';
                 document.getElementById('cityInput').value = '';
+                document.getElementById('districtInput').value = '';
             } else {
                 // Diğer sorgular - tek input
                 document.getElementById('singleInputSection').style.display = 'block';
