@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Girişi | Auth System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="admin-theme">
+    <!-- Arka Plan Şekilleri -->
+    <div class="bg-shapes">
+        <div class="bg-shape bg-shape-1"></div>
+        <div class="bg-shape bg-shape-2"></div>
+        <div class="bg-shape bg-shape-3"></div>
+    </div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <div class="auth-card admin-card">
+            <!-- Header -->
+            <div class="auth-header">
+                <div class="auth-logo admin-logo">🛡️</div>
+                <h1 class="auth-title">Admin Girişi</h1>
+                <p class="auth-subtitle">Yönetici paneline erişin</p>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Admin Login Form -->
+            <form class="auth-form" id="adminLoginForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Admin Email</label>
+                    <span class="form-icon">👤</span>
+                    <input type="email" class="form-input" id="email" name="email" placeholder="admin@admin.com"
+                        autocomplete="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Admin Şifresi</label>
+                    <span class="form-icon">🔒</span>
+                    <input type="password" class="form-input" id="password" name="password" placeholder="••••••••"
+                        autocomplete="current-password" required>
+                    <button type="button" class="password-toggle" data-input="password">👁️</button>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-admin btn-block" id="adminLoginBtn">
+                    <span class="btn-text">Admin Girişi</span>
+                </button>
+            </form>
+
+            <!-- Links -->
+            <div class="auth-links">
+                <a href="index.html" class="auth-link">
+                    ← Kullanıcı girişine dön
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const form = document.getElementById('adminLoginForm');
+        const alertContainer = document.getElementById('alertContainer');
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+
+        // Eğer zaten admin giriş yapmışsa panele yönlendir
+        if (AuthSystem.isAdminLoggedIn()) {
+            window.location.href = 'admin-panel.html';
+        }
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Loading state
+            AuthSystem.setButtonLoading(adminLoginBtn, true);
+
+            // Simulate network delay
+            setTimeout(() => {
+                const result = AuthSystem.adminLogin(email, password);
+
+                AuthSystem.setButtonLoading(adminLoginBtn, false);
+
+                if (result.success) {
+                    AuthSystem.showAlert(alertContainer, 'success', result.message);
+
+                    // Redirect to admin panel
+                    setTimeout(() => {
+                        window.location.href = 'admin-panel.html';
+                    }, 1000);
+                } else {
+                    AuthSystem.showAlert(alertContainer, 'error', result.message);
+                    AuthSystem.setInputError(document.getElementById('email'), true);
+                    AuthSystem.setInputError(document.getElementById('password'), true);
+                }
+            }, 800);
+        });
+
+        // Clear error on input
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', function () {
+                this.classList.remove('error', 'success');
+            });
+        });
+    </script>
+</body>
+
+</html>

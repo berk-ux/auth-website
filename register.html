@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol | Auth System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Arka Plan Şekilleri -->
+    <div class="bg-shapes">
+        <div class="bg-shape bg-shape-1"></div>
+        <div class="bg-shape bg-shape-2"></div>
+        <div class="bg-shape bg-shape-3"></div>
+    </div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Header -->
+            <div class="auth-header">
+                <div class="auth-logo">✨</div>
+                <h1 class="auth-title">Hesap Oluştur</h1>
+                <p class="auth-subtitle">Hemen ücretsiz kayıt olun</p>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Register Form -->
+            <form class="auth-form" id="registerForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">Kullanıcı Adı</label>
+                    <span class="form-icon">👤</span>
+                    <input type="text" class="form-input" id="username" name="username" placeholder="kullaniciadi"
+                        autocomplete="username" minlength="3" required>
+                    <p class="form-hint">En az 3 karakter olmalı</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Adresi</label>
+                    <span class="form-icon">📧</span>
+                    <input type="email" class="form-input" id="email" name="email" placeholder="ornek@email.com"
+                        autocomplete="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Şifre</label>
+                    <span class="form-icon">🔒</span>
+                    <input type="password" class="form-input" id="password" name="password" placeholder="••••••••"
+                        autocomplete="new-password" minlength="6" required>
+                    <button type="button" class="password-toggle" data-input="password">👁️</button>
+                    <p class="form-hint">En az 6 karakter olmalı</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Şifre Onay</label>
+                    <span class="form-icon">🔒</span>
+                    <input type="password" class="form-input" id="confirmPassword" name="confirmPassword"
+                        placeholder="••••••••" autocomplete="new-password" required>
+                    <button type="button" class="password-toggle" data-input="confirmPassword">👁️</button>
+                    <p class="form-error" id="confirmError">Şifreler eşleşmiyor!</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
+                    <span class="btn-text">Kayıt Ol</span>
+                </button>
+            </form>
+
+            <!-- Links -->
+            <div class="auth-links">
+                <a href="index.html" class="auth-link">
+                    Zaten hesabınız var mı? <strong>Giriş Yapın</strong>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const form = document.getElementById('registerForm');
+        const alertContainer = document.getElementById('alertContainer');
+        const registerBtn = document.getElementById('registerBtn');
+        const confirmError = document.getElementById('confirmError');
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirmPassword');
+
+        // Şifre eşleşme kontrolü
+        function checkPasswordMatch() {
+            const password = passwordInput.value;
+            const confirm = confirmInput.value;
+
+            if (confirm.length > 0 && password !== confirm) {
+                confirmError.classList.add('visible');
+                AuthSystem.setInputError(confirmInput, true);
+                return false;
+            } else {
+                confirmError.classList.remove('visible');
+                if (confirm.length > 0) {
+                    AuthSystem.setInputError(confirmInput, false);
+                }
+                return true;
+            }
+        }
+
+        confirmInput.addEventListener('input', checkPasswordMatch);
+        passwordInput.addEventListener('input', checkPasswordMatch);
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = passwordInput.value;
+            const confirmPassword = confirmInput.value;
+
+            // Şifre eşleşme kontrolü
+            if (password !== confirmPassword) {
+                AuthSystem.showAlert(alertContainer, 'error', 'Şifreler eşleşmiyor!');
+                AuthSystem.setInputError(confirmInput, true);
+                return;
+            }
+
+            // Loading state
+            AuthSystem.setButtonLoading(registerBtn, true);
+
+            // Simulate network delay
+            setTimeout(() => {
+                const result = AuthSystem.registerUser(username, email, password);
+
+                AuthSystem.setButtonLoading(registerBtn, false);
+
+                if (result.success) {
+                    AuthSystem.showAlert(alertContainer, 'success', result.message);
+
+                    // Clear form
+                    form.reset();
+
+                    // Redirect to login after success
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    AuthSystem.showAlert(alertContainer, 'error', result.message);
+
+                    // Hangi alanda hata varsa göster
+                    if (result.message.includes('email')) {
+                        AuthSystem.setInputError(document.getElementById('email'), true);
+                    }
+                    if (result.message.includes('Kullanıcı adı')) {
+                        AuthSystem.setInputError(document.getElementById('username'), true);
+                    }
+                }
+            }, 800);
+        });
+
+        // Clear error on input
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', function () {
+                if (this.id !== 'confirmPassword') {
+                    this.classList.remove('error', 'success');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Auth System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="admin-theme">
+    <!-- Arka Plan Şekilleri -->
+    <div class="bg-shapes">
+        <div class="bg-shape bg-shape-1"></div>
+        <div class="bg-shape bg-shape-2"></div>
+        <div class="bg-shape bg-shape-3"></div>
+    </div>
+
+    <!-- Admin Container -->
+    <div class="admin-container">
+        <div class="admin-panel">
+            <!-- Panel Header -->
+            <div class="admin-panel-header">
+                <h1 class="admin-panel-title">
+                    <span>🛡️</span>
+                    Admin Panel
+                </h1>
+
+                <div class="admin-stats">
+                    <div class="admin-stat">
+                        <div class="admin-stat-value" id="userCount">0</div>
+                        <div class="admin-stat-label">Toplam Kullanıcı</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline" id="logoutBtn">
+                    🚪 Çıkış Yap
+                </button>
+            </div>
+
+            <!-- Panel Body -->
+            <div class="admin-panel-body">
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
+
+                <!-- Users Table -->
+                <div class="table-container" id="tableContainer">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Kullanıcı Adı</th>
+                                <th>Email</th>
+                                <th>Şifre (Hash)</th>
+                                <th>Kayıt Tarihi</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">👥</div>
+                    <p class="empty-state-text">Henüz kayıtlı kullanıcı bulunmuyor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '';
+        const alertContainer = document.getElementById('alertContainer');
+        const usersTableBody = document.getElementById('usersTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const tableContainer = document.getElementById('tableContainer');
+        const userCountEl = document.getElementById('userCount');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Admin kontrolü
+        if (localStorage.getItem('adminLoggedIn') !== 'true') {
+            window.location.href = 'admin-login.html';
+        }
+
+        function showAlert(type, message) {
+            const iconMap = { success: '✓', error: '✕', warning: '⚠' };
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    <span class="alert-icon">${iconMap[type]}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            setTimeout(() => alertContainer.innerHTML = '', 5000);
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('tr-TR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(API_URL + '/api/admin/users');
+                const result = await response.json();
+
+                if (result.success) {
+                    const users = result.users;
+                    userCountEl.textContent = users.length;
+
+                    if (users.length === 0) {
+                        tableContainer.style.display = 'none';
+                        emptyState.style.display = 'block';
+                        return;
+                    }
+
+                    tableContainer.style.display = 'block';
+                    emptyState.style.display = 'none';
+
+                    usersTableBody.innerHTML = users.map(user => `
+                        <tr>
+                            <td class="user-id">${user.id}</td>
+                            <td><strong>${escapeHtml(user.username)}</strong></td>
+                            <td class="user-email">${escapeHtml(user.email)}</td>
+                            <td style="font-family: monospace; font-size: 11px; color: #f6ad55; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                ${user.password.substring(0, 20)}...
+                            </td>
+                            <td class="user-date">${formatDate(user.created_at)}</td>
+                            <td>
+                                <button class="btn-delete" onclick="deleteUser(${user.id})">
+                                    🗑️ Sil
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                showAlert('error', 'Kullanıcılar yüklenemedi!');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
+
+            try {
+                const response = await fetch(API_URL + `/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    loadUsers();
+                } else {
+                    showAlert('error', result.message);
+                }
+            } catch (error) {
+                showAlert('error', 'Silme işlemi başarısız!');
+            }
+        }
+
+        // Global function
+        window.deleteUser = deleteUser;
+
+        // Çıkış
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('adminLoggedIn');
+            window.location.href = 'admin-login.html';
+        });
+
+        // Yükle
+        loadUsers();
+        setInterval(loadUsers, 10000); // Her 10 saniyede güncelle
+    </script>
+</body>
+
+</html>

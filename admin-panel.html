@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Auth System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="admin-theme">
+    <!-- Arka Plan Şekilleri -->
+    <div class="bg-shapes">
+        <div class="bg-shape bg-shape-1"></div>
+        <div class="bg-shape bg-shape-2"></div>
+        <div class="bg-shape bg-shape-3"></div>
+    </div>
+
+    <!-- Admin Container -->
+    <div class="admin-container">
+        <div class="admin-panel">
+            <!-- Panel Header -->
+            <div class="admin-panel-header">
+                <h1 class="admin-panel-title">
+                    <span>🛡️</span>
+                    Admin Panel
+                </h1>
+
+                <div class="admin-stats">
+                    <div class="admin-stat">
+                        <div class="admin-stat-value" id="userCount">0</div>
+                        <div class="admin-stat-label">Toplam Kullanıcı</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline" id="logoutBtn">
+                    🚪 Çıkış Yap
+                </button>
+            </div>
+
+            <!-- Panel Body -->
+            <div class="admin-panel-body">
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
+
+                <!-- Users Table -->
+                <div class="table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Kullanıcı Adı</th>
+                                <th>Email</th>
+                                <th>Şifre</th>
+                                <th>Kayıt Tarihi</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">👥</div>
+                    <p class="empty-state-text">Henüz kayıtlı kullanıcı bulunmuyor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const alertContainer = document.getElementById('alertContainer');
+        const usersTableBody = document.getElementById('usersTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const userCountEl = document.getElementById('userCount');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Admin kontrolü
+        if (!AuthSystem.isAdminLoggedIn()) {
+            window.location.href = 'admin-login.html';
+        }
+
+        // Şifre decode (base64)
+        function decodePassword(hash) {
+            try {
+                const decoded = atob(hash);
+                return decoded.replace('_secure_salt_2024', '');
+            } catch (e) {
+                return '***';
+            }
+        }
+
+        // Kullanıcıları yükle
+        function loadUsers() {
+            const users = AuthSystem.getUsers();
+
+            userCountEl.textContent = users.length;
+
+            if (users.length === 0) {
+                usersTableBody.innerHTML = '';
+                emptyState.style.display = 'block';
+                document.querySelector('.table-container').style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            document.querySelector('.table-container').style.display = 'block';
+
+            usersTableBody.innerHTML = users.map(user => `
+                <tr data-user-id="${user.id}">
+                    <td class="user-id">${user.id.substring(0, 12)}...</td>
+                    <td><strong>${escapeHtml(user.username)}</strong></td>
+                    <td class="user-email">${escapeHtml(user.email)}</td>
+                    <td class="user-password" style="font-family: monospace; color: #f6ad55;">
+                        <span class="password-hidden" id="pwd-${user.id}">••••••••</span>
+                        <button class="btn-show-pwd" onclick="togglePassword('${user.id}', '${user.password}')" style="margin-left: 8px; padding: 4px 8px; font-size: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 4px; cursor: pointer;">
+                            👁️
+                        </button>
+                    </td>
+                    <td class="user-date">${AuthSystem.formatDate(user.createdAt)}</td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteUser('${user.id}')">
+                            🗑️ Sil
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Şifre göster/gizle
+        function togglePassword(userId, hash) {
+            const el = document.getElementById('pwd-' + userId);
+            if (el.textContent === '••••••••') {
+                el.textContent = decodePassword(hash);
+                el.style.color = '#48bb78';
+            } else {
+                el.textContent = '••••••••';
+                el.style.color = '#f6ad55';
+            }
+        }
+
+        // Global functions
+        window.togglePassword = togglePassword;
+
+        // HTML escape
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Kullanıcı silme
+        function deleteUser(userId) {
+            if (confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
+                const result = AuthSystem.deleteUser(userId);
+
+                if (result.success) {
+                    AuthSystem.showAlert(alertContainer, 'success', result.message);
+
+                    // Satırı animasyonla kaldır
+                    const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                    if (row) {
+                        row.style.animation = 'slideUp 0.3s ease-out reverse';
+                        setTimeout(() => {
+                            loadUsers();
+                        }, 300);
+                    }
+                } else {
+                    AuthSystem.showAlert(alertContainer, 'error', result.message);
+                }
+            }
+        }
+
+        // Global function for delete button
+        window.deleteUser = deleteUser;
+
+        // Çıkış yap
+        logoutBtn.addEventListener('click', function () {
+            AuthSystem.adminLogout();
+            window.location.href = 'admin-login.html';
+        });
+
+        // Sayfa yüklendiğinde kullanıcıları getir
+        loadUsers();
+
+        // Her 5 saniyede yeni kullanıcıları kontrol et
+        setInterval(loadUsers, 5000);
+    </script>
+</body>
+
+</html>

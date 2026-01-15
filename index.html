@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap | Auth System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Arka Plan Şekilleri -->
+    <div class="bg-shapes">
+        <div class="bg-shape bg-shape-1"></div>
+        <div class="bg-shape bg-shape-2"></div>
+        <div class="bg-shape bg-shape-3"></div>
+    </div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Header -->
+            <div class="auth-header">
+                <div class="auth-logo">🔐</div>
+                <h1 class="auth-title">Hoş Geldiniz</h1>
+                <p class="auth-subtitle">Hesabınıza giriş yapın</p>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Login Form -->
+            <form class="auth-form" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="identifier">Email veya Kullanıcı Adı</label>
+                    <span class="form-icon">👤</span>
+                    <input type="text" class="form-input" id="identifier" name="identifier"
+                        placeholder="ornek@email.com veya kullaniciadi" autocomplete="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Şifre</label>
+                    <span class="form-icon">🔒</span>
+                    <input type="password" class="form-input" id="password" name="password" placeholder="••••••••"
+                        autocomplete="current-password" required>
+                    <button type="button" class="password-toggle" data-input="password">👁️</button>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                    <span class="btn-text">Giriş Yap</span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">
+                <span class="divider-line"></span>
+                <span class="divider-text">veya</span>
+                <span class="divider-line"></span>
+            </div>
+
+            <!-- Links -->
+            <div class="auth-links">
+                <a href="register.html" class="auth-link">
+                    Hesabınız yok mu? <strong>Kayıt Olun</strong>
+                </a>
+                <br>
+                <a href="admin-login.html" class="admin-link">
+                    🛡️ Admin Girişi
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const form = document.getElementById('loginForm');
+        const alertContainer = document.getElementById('alertContainer');
+        const loginBtn = document.getElementById('loginBtn');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Loading state
+            AuthSystem.setButtonLoading(loginBtn, true);
+
+            // Simulate network delay
+            setTimeout(() => {
+                const result = AuthSystem.loginUser(identifier, password);
+
+                AuthSystem.setButtonLoading(loginBtn, false);
+
+                if (result.success) {
+                    AuthSystem.showAlert(alertContainer, 'success', result.message);
+
+                    // Redirect after success
+                    setTimeout(() => {
+                        // Ana sayfaya yönlendir (şimdilik alert)
+                        alert('Giriş başarılı! Hoş geldiniz ' + result.user.username + '! 🎉');
+                        // window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    AuthSystem.showAlert(alertContainer, 'error', result.message);
+                    AuthSystem.setInputError(document.getElementById('identifier'), true);
+                    AuthSystem.setInputError(document.getElementById('password'), true);
+                }
+            }, 800);
+        });
+
+        // Clear error on input
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', function () {
+                this.classList.remove('error', 'success');
+            });
+        });
+    </script>
+</body>
+
+</html>
