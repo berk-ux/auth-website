@@ -4,147 +4,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Auth System</title>
+    <title>Dashboard | BERK Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
-        .dashboard-container {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 600px;
-            animation: slideUp 0.6s ease-out;
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+            min-height: 100vh;
         }
 
-        .dashboard-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 24px;
-            padding: 40px;
-            text-align: center;
+        .dashboard-header {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
         }
 
         .user-avatar {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            margin: 0 auto 25px;
-            box-shadow: 0 0 40px rgba(102, 126, 234, 0.4);
-        }
-
-        .welcome-text {
-            color: #fff;
-            font-size: 1.8rem;
             font-weight: 700;
-            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
 
-        .user-email {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1rem;
-            margin-bottom: 30px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .info-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .info-label {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .info-value {
-            color: #fff;
-            font-size: 1.1rem;
+        .user-name {
             font-weight: 600;
         }
 
-        .success-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(72, 187, 120, 0.2);
-            color: #48bb78;
-            padding: 10px 20px;
+        .user-type {
+            font-size: 0.75rem;
+            padding: 3px 10px;
             border-radius: 50px;
-            font-size: 0.9rem;
-            margin-bottom: 30px;
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        .user-type.vip {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 65px);
+            border: none;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 65px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 10;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .error-message h2 {
+            margin-bottom: 10px;
+        }
+
+        .error-message p {
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+
+        .btn-retry {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Footer */
+        .dashboard-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.7rem;
+            z-index: 100;
         }
     </style>
 </head>
 
 <body>
-    <!-- Arka Plan Şekilleri -->
-    <div class="bg-shapes">
-        <div class="bg-shape bg-shape-1"></div>
-        <div class="bg-shape bg-shape-2"></div>
-        <div class="bg-shape bg-shape-3"></div>
-    </div>
-
-    <!-- Dashboard Container -->
-    <div class="dashboard-container">
-        <div class="dashboard-card">
-            <div class="user-avatar">👤</div>
-
-            <div class="success-badge">
-                ✓ Giriş Başarılı
-            </div>
-
-            <h1 class="welcome-text">Hoş Geldin, <span id="userName">Kullanıcı</span>!</h1>
-            <p class="user-email" id="userEmail">email@example.com</p>
-
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Kullanıcı ID</div>
-                    <div class="info-value" id="userId">#0</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Durum</div>
-                    <div class="info-value" style="color: #48bb78;">● Aktif</div>
-                </div>
-            </div>
-
-            <button class="btn btn-primary btn-block" id="logoutBtn">
-                🚪 Çıkış Yap
-            </button>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo">🔐 BERK Panel</div>
         </div>
+
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <div>
+                <div class="user-name" id="userName">Kullanıcı</div>
+                <span class="user-type" id="userType">Free</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button class="btn-logout" onclick="logout()">🚪 Çıkış</button>
+        </div>
+    </header>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p>Yükleniyor...</p>
     </div>
+
+    <!-- iframe Container -->
+    <div class="iframe-container" id="iframeContainer" style="display: none;">
+        <iframe src="https://rodney.lat" id="mainFrame" onload="hideLoading()" onerror="showError()"></iframe>
+    </div>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+        © 2026 <strong>BERK Panel</strong> - Tüm hakları gizli ve saklıdır.
+    </footer>
 
     <script>
         // Kullanıcı kontrolü
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-        if (!user) {
+        if (!user.id) {
             window.location.href = 'index.html';
         } else {
-            document.getElementById('userName').textContent = user.username;
-            document.getElementById('userEmail').textContent = user.email;
-            document.getElementById('userId').textContent = '#' + user.id;
+            // Kullanıcı bilgilerini göster
+            document.getElementById('userAvatar').textContent = user.username ? user.username.substring(0, 2).toUpperCase() : '?';
+            document.getElementById('userName').textContent = user.username || 'Kullanıcı';
+
+            const typeEl = document.getElementById('userType');
+            if (user.user_type === 'vip') {
+                typeEl.textContent = '👑 VIP';
+                typeEl.classList.add('vip');
+            } else {
+                typeEl.textContent = 'Free';
+            }
         }
 
-        document.getElementById('logoutBtn').addEventListener('click', () => {
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('iframeContainer').style.display = 'block';
+        }
+
+        function showError() {
+            document.getElementById('loadingOverlay').innerHTML = `
+                <div class="error-message">
+                    <h2>😕 Bağlantı Hatası</h2>
+                    <p>Site yüklenemedi. Lütfen tekrar deneyin.</p>
+                    <button class="btn-retry" onclick="location.reload()">🔄 Yeniden Dene</button>
+                </div>
+            `;
+        }
+
+        function logout() {
             localStorage.removeItem('user');
             window.location.href = 'index.html';
-        });
+        }
+
+        // 3 saniye içinde yüklenmezse iframe'i göster
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('iframeContainer').style.display = 'block';
+        }, 3000);
     </script>
 </body>
 
