@@ -280,8 +280,8 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// 🔓 Kullanıcı Giriş (rate limited)
-app.post('/api/login', loginLimiter, async (req, res) => {
+// 🔓 Kullanıcı Giriş
+app.post('/api/login', async (req, res) => {
     try {
         let { identifier, password } = req.body;
 
