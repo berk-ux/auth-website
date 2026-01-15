@@ -372,6 +372,44 @@ app.post('/api/admin/create-vip', async (req, res) => {
     }
 });
 
+// 🔄 Üyelik Tipini Değiştir (Admin)
+app.put('/api/admin/users/:id/toggle-vip', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Mevcut kullanıcıyı bul
+        const user = await pool.query('SELECT user_type FROM users WHERE id = $1', [id]);
+
+        if (user.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Kullanıcı bulunamadı!'
+            });
+        }
+
+        // Tipi değiştir
+        const currentType = user.rows[0].user_type || 'free';
+        const newType = currentType === 'vip' ? 'free' : 'vip';
+
+        await pool.query('UPDATE users SET user_type = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [newType, id]);
+
+        console.log(`🔄 Kullanıcı ${id}: ${currentType} → ${newType}`);
+
+        res.json({
+            success: true,
+            message: newType === 'vip' ? 'Kullanıcı VIP yapıldı!' : 'VIP üyelik kaldırıldı!',
+            newType: newType
+        });
+
+    } catch (error) {
+        console.error('❌ Tip değiştirme hatası:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sunucu hatası!'
+        });
+    }
+});
+
 // 📈 İstatistikler
 app.get('/api/stats', async (req, res) => {
     try {

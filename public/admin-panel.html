@@ -557,7 +557,13 @@
                                 </div>
                             </td>
                             <td class="date-cell">${formatDate(user.created_at)}</td>
-                            <td>
+                            <td style="display: flex; gap: 8px;">
+                                <button onclick="toggleVip(${user.id})" title="${user.user_type === 'vip' ? 'VIP kaldır' : 'VIP yap'}"
+                                    style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+                                    background: ${user.user_type === 'vip' ? '#e2e8f0' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'};
+                                    color: ${user.user_type === 'vip' ? '#64748b' : 'white'};">
+                                    ${user.user_type === 'vip' ? '👤 Free' : '👑 VIP'}
+                                </button>
                                 <button class="btn-delete" onclick="deleteUser(${user.id})">
                                     🗑️
                                 </button>
@@ -588,6 +594,27 @@
         }
 
         window.deleteUser = deleteUser;
+
+        // VIP Toggle
+        async function toggleVip(userId) {
+            try {
+                const response = await fetch(API_URL + `/api/admin/users/${userId}/toggle-vip`, {
+                    method: 'PUT'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message);
+                    loadUsers();
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            } catch (error) {
+                console.error('VIP toggle hatası:', error);
+            }
+        }
+
+        window.toggleVip = toggleVip;
 
         // VIP Üye Oluşturma
         document.getElementById('vipForm').addEventListener('submit', async (e) => {
