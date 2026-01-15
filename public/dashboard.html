@@ -15,231 +15,381 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            background: #0a0a0f;
             min-height: 100vh;
-        }
-
-        /* Header */
-        .dashboard-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 1000;
-        }
-
-        .logo {
-            font-size: 1.1rem;
-            font-weight: 700;
             color: white;
         }
 
-        .user-info {
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #0f0f15 0%, #1a1a25 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        /* User Profile */
+        .user-profile {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
         .user-avatar {
-            width: 36px;
-            height: 36px;
+            width: 50px;
+            height: 50px;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            border-radius: 10px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 1.1rem;
+        }
+
+        .user-details {
+            flex: 1;
         }
 
         .user-name {
-            color: white;
             font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .verified-badge {
+            color: #3b82f6;
             font-size: 0.9rem;
         }
 
-        .user-type {
+        .user-type-badge {
             font-size: 0.7rem;
-            padding: 3px 10px;
-            border-radius: 50px;
-            background: #475569;
-            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            margin-top: 4px;
+            display: inline-block;
         }
 
-        .user-type.vip {
+        .user-type-badge.vip {
             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
         }
 
-        .btn-logout {
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
+        .online-status {
+            font-size: 0.75rem;
+            color: #34d399;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .online-dot {
+            width: 6px;
+            height: 6px;
+            background: #34d399;
+            border-radius: 50%;
+        }
+
+        /* Menu */
+        .menu-section {
+            padding: 16px 0;
+        }
+
+        .menu-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+            padding: 8px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
             color: white;
+        }
+
+        .menu-item.active {
+            background: rgba(99, 102, 241, 0.1);
+            color: #a5b4fc;
+            border-right: 3px solid #6366f1;
+        }
+
+        .menu-icon {
+            width: 20px;
+            margin-right: 12px;
+            font-size: 1rem;
+        }
+
+        .menu-arrow {
+            margin-left: auto;
+            transition: transform 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .menu-item.open .menu-arrow {
+            transform: rotate(180deg);
+        }
+
+        .menu-badge {
+            margin-left: auto;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .menu-badge.free {
+            background: #22c55e;
+            color: white;
+        }
+
+        .menu-badge.vip {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
+        }
+
+        /* Submenu */
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .submenu.open {
+            max-height: 500px;
+        }
+
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px 10px 52px;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .submenu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .submenu-item.active {
+            color: #a5b4fc;
+        }
+
+        /* Premium Section */
+        .premium-section {
+            margin: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .premium-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 8px;
+        }
+
+        .premium-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Logout */
+        .logout-btn {
+            margin: 20px;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #f87171;
             font-size: 0.85rem;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             transition: all 0.2s;
-            font-family: inherit;
         }
 
-        .btn-logout:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
         }
 
         /* Main Content */
         .main-content {
-            padding: 80px 20px 40px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* Query Section */
-        .query-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .query-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            margin-left: 280px;
+            flex: 1;
             padding: 24px;
-            transition: all 0.3s;
+            min-height: 100vh;
         }
 
-        .query-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .query-card-header {
+        /* Header */
+        .content-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .query-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .header-badge {
+            padding: 6px 12px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #a5b4fc;
+        }
+
+        /* Query Card */
+        .query-card {
+            background: linear-gradient(135deg, #1a1a25 0%, #0f0f15 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 600px;
         }
 
         .query-title {
-            color: white;
+            font-size: 1.2rem;
             font-weight: 600;
-            font-size: 1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .query-description {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 24px;
         }
 
         .query-input {
             width: 100%;
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             color: white;
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-family: inherit;
-            margin-bottom: 12px;
-            transition: all 0.3s;
+            margin-bottom: 16px;
         }
 
         .query-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: #64748b;
         }
 
         .query-input:focus {
             outline: none;
             border-color: #6366f1;
-            background: rgba(255, 255, 255, 0.15);
         }
 
         .query-btn {
             width: 100%;
-            padding: 12px;
+            padding: 16px;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            font-family: inherit;
             transition: all 0.3s;
         }
 
         .query-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
         }
 
-        .query-btn.vip-only {
+        .query-btn.vip {
             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
         }
 
-        /* Result Section */
+        /* Result */
         .result-section {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 24px;
-            min-height: 200px;
-        }
-
-        .result-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .result-title {
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .result-clear {
-            padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-
-        .result-empty {
-            text-align: center;
-            padding: 40px;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .result-content {
+            margin-top: 24px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
             padding: 20px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-content {
             font-family: 'Monaco', monospace;
             font-size: 0.85rem;
             color: #34d399;
@@ -247,147 +397,222 @@
             line-height: 1.6;
         }
 
-        .result-loading {
+        /* Welcome Screen */
+        .welcome-screen {
             text-align: center;
-            padding: 40px;
-            color: white;
+            padding: 60px 20px;
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-top-color: #6366f1;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .welcome-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .welcome-text {
+            color: #64748b;
+            font-size: 1rem;
         }
 
         /* Footer */
-        .dashboard-footer {
-            text-align: center;
+        .footer {
+            margin-top: auto;
             padding: 20px;
-            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            color: #475569;
             font-size: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .query-section {
-                grid-template-columns: 1fr;
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                margin-left: 0;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- Header -->
-    <header class="dashboard-header">
-        <div class="logo">🔐 BERK Panel</div>
-
-        <div class="user-info">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <!-- User Profile -->
+        <div class="user-profile">
             <div class="user-avatar" id="userAvatar">?</div>
-            <div>
-                <div class="user-name" id="userName">Kullanıcı</div>
-                <span class="user-type" id="userType">Free</span>
+            <div class="user-details">
+                <div class="user-name">
+                    <span id="userName">Kullanıcı</span>
+                    <span class="verified-badge">✓</span>
+                </div>
+                <span class="user-type-badge" id="userType">Free Üyelik</span>
+                <div class="online-status">
+                    <span class="online-dot"></span>
+                    Çevrimiçi
+                </div>
             </div>
         </div>
 
-        <button class="btn-logout" onclick="logout()">🚪 Çıkış</button>
-    </header>
+        <!-- Menu -->
+        <nav class="menu-section">
+            <div class="menu-item" onclick="showWelcome()">
+                <span class="menu-icon">🏠</span>
+                Ana Sayfa
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">📊</span>
+                Kullanıcı Sıralaması
+            </div>
+        </nav>
+
+        <div class="menu-title">ÜCRETSİZ ÇÖZÜMLER</div>
+        <nav class="menu-section">
+            <!-- Mernis 2026 -->
+            <div class="menu-item" onclick="toggleSubmenu('mernis')">
+                <span class="menu-icon">📋</span>
+                Mernis 2026
+                <span class="menu-arrow">▼</span>
+            </div>
+            <div class="submenu" id="mernis-submenu">
+                <div class="submenu-item"
+                    onclick="showQuery('tc', 'TC Sorgu', 'TC kimlik numarası ile sorgulama', 'TC Kimlik No girin...')">
+                    TC Sorgu
+                    <span class="menu-badge free">FREE</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showQuery('name', 'Ad Soyad Sorgu', 'Ad ve soyad ile sorgulama', 'Ad Soyad girin...')">
+                    Ad Soyad Sorgu
+                    <span class="menu-badge free">FREE</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showQuery('address', 'Hane/Adres Sorgu', 'TC ile adres sorgulama', 'TC Kimlik No girin...')">
+                    Hane/Adres Sorgu
+                    <span class="menu-badge free">FREE</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showQuery('family', 'Aile Sorgu', 'TC ile aile bilgileri sorgulama', 'TC Kimlik No girin...')">
+                    Aile Sorgu
+                    <span class="menu-badge free">FREE</span>
+                </div>
+            </div>
+
+            <!-- GSM Çözümleri -->
+            <div class="menu-item" onclick="toggleSubmenu('gsm')">
+                <span class="menu-icon">📱</span>
+                GSM Çözümleri
+                <span class="menu-arrow">▼</span>
+            </div>
+            <div class="submenu" id="gsm-submenu">
+                <div class="submenu-item"
+                    onclick="showQuery('gsm', 'GSM → TC', 'Telefon numarası ile TC sorgulama', '05XX XXX XX XX')">
+                    GSM → TC
+                    <span class="menu-badge free">FREE</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showQuery('tcgsm', 'TC → GSM', 'TC ile telefon numarası sorgulama', 'TC Kimlik No girin...')">
+                    TC → GSM
+                    <span class="menu-badge free">FREE</span>
+                </div>
+            </div>
+
+            <!-- Araçlar -->
+            <div class="menu-item" onclick="toggleSubmenu('tools')">
+                <span class="menu-icon">🔧</span>
+                Araçlar
+                <span class="menu-arrow">▼</span>
+            </div>
+            <div class="submenu" id="tools-submenu">
+                <div class="submenu-item"
+                    onclick="showQuery('plaka', 'Plaka Sorgu', 'Araç plakası ile sorgulama', 'Plaka girin... (34ABC123)')">
+                    Plaka Sorgu
+                    <span class="menu-badge free">FREE</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="menu-title">PREMİUM ÇÖZÜMLER</div>
+        <nav class="menu-section">
+            <div class="menu-item" onclick="toggleSubmenu('premium')">
+                <span class="menu-icon">👑</span>
+                VIP Sorgular
+                <span class="menu-arrow">▼</span>
+            </div>
+            <div class="submenu" id="premium-submenu">
+                <div class="submenu-item"
+                    onclick="showQuery('detayli', 'Detaylı Sorgu', 'Tüm bilgiler tek sorguda', 'TC Kimlik No girin...', true)">
+                    Detaylı Sorgu
+                    <span class="menu-badge vip">VIP</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showQuery('operator', 'Operatör Sorgu', 'Telefon operatör geçmişi', 'GSM No girin...', true)">
+                    Operatör Sorgu
+                    <span class="menu-badge vip">VIP</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Premium CTA -->
+        <div class="premium-section" id="premiumCTA">
+            <div class="premium-title">👑 PREMİUM ÇÖZÜMLER</div>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 12px;">Tüm özelliklere erişim için VIP olun</p>
+            <button class="premium-btn">VIP Satın Al</button>
+        </div>
+
+        <!-- Logout -->
+        <button class="logout-btn" onclick="logout()">
+            🚪 Çıkış Yap
+        </button>
+    </aside>
 
     <!-- Main Content -->
-    <div class="main-content">
-        <!-- Query Cards -->
-        <div class="query-section">
-            <!-- TC Sorgu -->
-            <div class="query-card">
-                <div class="query-card-header">
-                    <div class="query-icon">🆔</div>
-                    <div class="query-title">TC Sorgu</div>
-                </div>
-                <input type="text" class="query-input" id="tcInput" placeholder="TC Kimlik No girin..." maxlength="11">
-                <button class="query-btn" onclick="query('tc')">🔍 Sorgula</button>
-            </div>
-
-            <!-- Ad Soyad Sorgu -->
-            <div class="query-card">
-                <div class="query-card-header">
-                    <div class="query-icon">👤</div>
-                    <div class="query-title">Ad Soyad Sorgu</div>
-                </div>
-                <input type="text" class="query-input" id="nameInput" placeholder="Ad ve Soyad girin...">
-                <button class="query-btn" onclick="query('name')">🔍 Sorgula</button>
-            </div>
-
-            <!-- GSM > TC Sorgu -->
-            <div class="query-card">
-                <div class="query-card-header">
-                    <div class="query-icon">📱</div>
-                    <div class="query-title">GSM → TC Sorgu</div>
-                </div>
-                <input type="text" class="query-input" id="gsmInput" placeholder="GSM numarası girin..." maxlength="11">
-                <button class="query-btn" onclick="query('gsm')">🔍 Sorgula</button>
-            </div>
-
-            <!-- TC > GSM Sorgu -->
-            <div class="query-card">
-                <div class="query-card-header">
-                    <div class="query-icon">📞</div>
-                    <div class="query-title">TC → GSM Sorgu</div>
-                </div>
-                <input type="text" class="query-input" id="tcGsmInput" placeholder="TC Kimlik No girin..."
-                    maxlength="11">
-                <button class="query-btn" onclick="query('tcgsm')">🔍 Sorgula</button>
-            </div>
-
-            <!-- Aile Sorgu -->
-            <div class="query-card">
-                <div class="query-card-header">
-                    <div class="query-icon">👨‍👩‍👧‍👦</div>
-                    <div class="query-title">Aile Sorgu</div>
-                </div>
-                <input type="text" class="query-input" id="familyInput" placeholder="TC Kimlik No girin..."
-                    maxlength="11">
-                <button class="query-btn vip-only" onclick="query('family')">👑 VIP Sorgula</button>
-            </div>
-
-            <!-- Adres Sorgu -->
-            <div class="query-card">
-                <div class="query-card-header">
-                    <div class="query-icon">🏠</div>
-                    <div class="query-title">Adres Sorgu</div>
-                </div>
-                <input type="text" class="query-input" id="addressInput" placeholder="TC Kimlik No girin..."
-                    maxlength="11">
-                <button class="query-btn vip-only" onclick="query('address')">👑 VIP Sorgula</button>
+    <main class="main-content">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen">
+            <div class="welcome-screen">
+                <div class="welcome-icon">🔐</div>
+                <h1 class="welcome-title">BERK Panel'e Hoş Geldiniz!</h1>
+                <p class="welcome-text">Sol menüden bir sorgu seçerek başlayın.</p>
             </div>
         </div>
 
-        <!-- Result Section -->
-        <div class="result-section">
-            <div class="result-header">
-                <div class="result-title">📊 Sorgu Sonuçları</div>
-                <button class="result-clear" onclick="clearResult()">🗑️ Temizle</button>
+        <!-- Query Screen -->
+        <div id="queryScreen" style="display: none;">
+            <div class="content-header">
+                <h1 class="page-title" id="pageTitle">Sorgu</h1>
+                <span class="header-badge" id="queryBadge">FREE</span>
             </div>
-            <div id="resultArea">
-                <div class="result-empty">
-                    Sorgu yapmak için yukarıdaki kartlardan birini kullanın.
+
+            <div class="query-card">
+                <h2 class="query-title" id="queryTitle">
+                    <span id="queryIcon">🔍</span>
+                    <span id="queryName">Sorgu</span>
+                </h2>
+                <p class="query-description" id="queryDescription">Sorgu açıklaması</p>
+
+                <input type="text" class="query-input" id="queryInput" placeholder="Değer girin...">
+                <button class="query-btn" id="queryBtn" onclick="executeQuery()">🔍 Sorgula</button>
+
+                <div class="result-section" id="resultSection">
+                    <div class="result-content" id="resultContent"></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Footer -->
-    <footer class="dashboard-footer">
-        © 2026 <strong>BERK Panel</strong> - Tüm hakları gizli ve saklıdır.
-    </footer>
+        <!-- Footer -->
+        <footer class="footer">
+            © 2026 <strong>BERK Panel</strong> - Tüm hakları gizli ve saklıdır.
+        </footer>
+    </main>
 
     <script>
         // Kullanıcı kontrolü
@@ -401,31 +626,62 @@
 
             const typeEl = document.getElementById('userType');
             if (user.user_type === 'vip') {
-                typeEl.textContent = '👑 VIP';
+                typeEl.textContent = '👑 VIP Üyelik';
                 typeEl.classList.add('vip');
+                document.getElementById('premiumCTA').style.display = 'none';
+            } else {
+                typeEl.textContent = '○ Free Üyelik';
             }
         }
 
-        const queryNames = {
-            'tc': 'TC Sorgu',
-            'name': 'Ad Soyad Sorgu',
-            'gsm': 'GSM → TC Sorgu',
-            'tcgsm': 'TC → GSM Sorgu',
-            'family': 'Aile Sorgu',
-            'address': 'Adres Sorgu'
-        };
+        let currentQueryType = '';
+        let currentIsVip = false;
 
-        async function query(type) {
-            const inputs = {
-                'tc': 'tcInput',
-                'name': 'nameInput',
-                'gsm': 'gsmInput',
-                'tcgsm': 'tcGsmInput',
-                'family': 'familyInput',
-                'address': 'addressInput'
-            };
+        function toggleSubmenu(id) {
+            const submenu = document.getElementById(id + '-submenu');
+            const menuItem = submenu.previousElementSibling;
 
-            const value = document.getElementById(inputs[type]).value.trim();
+            submenu.classList.toggle('open');
+            menuItem.classList.toggle('open');
+        }
+
+        function showWelcome() {
+            document.getElementById('welcomeScreen').style.display = 'block';
+            document.getElementById('queryScreen').style.display = 'none';
+        }
+
+        function showQuery(type, name, desc, placeholder, isVip = false) {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('queryScreen').style.display = 'block';
+
+            document.getElementById('pageTitle').textContent = name;
+            document.getElementById('queryName').textContent = name;
+            document.getElementById('queryDescription').textContent = desc;
+            document.getElementById('queryInput').placeholder = placeholder;
+            document.getElementById('queryInput').value = '';
+            document.getElementById('resultSection').classList.remove('show');
+
+            const badge = document.getElementById('queryBadge');
+            const btn = document.getElementById('queryBtn');
+
+            if (isVip) {
+                badge.textContent = '👑 VIP';
+                badge.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%)';
+                badge.style.color = '#fbbf24';
+                btn.classList.add('vip');
+            } else {
+                badge.textContent = 'FREE';
+                badge.style.background = 'rgba(34, 197, 94, 0.2)';
+                badge.style.color = '#34d399';
+                btn.classList.remove('vip');
+            }
+
+            currentQueryType = type;
+            currentIsVip = isVip;
+        }
+
+        async function executeQuery() {
+            const value = document.getElementById('queryInput').value.trim();
 
             if (!value) {
                 alert('Lütfen bir değer girin!');
@@ -433,54 +689,33 @@
             }
 
             // VIP kontrolü
-            if ((type === 'family' || type === 'address') && user.user_type !== 'vip') {
+            if (currentIsVip && user.user_type !== 'vip') {
                 alert('Bu sorgu sadece VIP üyeler için aktiftir!');
                 return;
             }
 
-            // Loading göster
-            document.getElementById('resultArea').innerHTML = `
-                <div class="result-loading">
-                    <div class="spinner"></div>
-                    <p>Sorgulanıyor...</p>
-                </div>
-            `;
+            document.getElementById('resultContent').innerHTML = '⏳ Sorgulanıyor...';
+            document.getElementById('resultSection').classList.add('show');
 
             try {
                 const response = await fetch('/api/query', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, value, userId: user.id })
+                    body: JSON.stringify({ type: currentQueryType, value, userId: user.id })
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    document.getElementById('resultArea').innerHTML = `
-                        <div class="result-content">${result.data}</div>
-                    `;
+                    document.getElementById('resultContent').innerHTML = result.data;
                 } else {
-                    document.getElementById('resultArea').innerHTML = `
-                        <div class="result-content" style="color: #f87171;">
-❌ Hata: ${result.message}
-                        </div>
-                    `;
+                    document.getElementById('resultContent').innerHTML = `❌ Hata: ${result.message}`;
+                    document.getElementById('resultContent').style.color = '#f87171';
                 }
             } catch (error) {
-                document.getElementById('resultArea').innerHTML = `
-                    <div class="result-content" style="color: #f87171;">
-❌ Bağlantı hatası. Lütfen tekrar deneyin.
-                    </div>
-                `;
+                document.getElementById('resultContent').innerHTML = '❌ Bağlantı hatası. Lütfen tekrar deneyin.';
+                document.getElementById('resultContent').style.color = '#f87171';
             }
-        }
-
-        function clearResult() {
-            document.getElementById('resultArea').innerHTML = `
-                <div class="result-empty">
-                    Sorgu yapmak için yukarıdaki kartlardan birini kullanın.
-                </div>
-            `;
         }
 
         function logout() {
@@ -489,13 +724,12 @@
         }
 
         // Enter tuşu ile sorgu
-        document.querySelectorAll('.query-input').forEach(input => {
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    input.parentElement.querySelector('.query-btn').click();
-                }
-            });
+        document.getElementById('queryInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executeQuery();
         });
+
+        // İlk açılışta Mernis menüsünü aç
+        toggleSubmenu('mernis');
     </script>
 </body>
 
