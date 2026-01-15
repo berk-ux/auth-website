@@ -436,6 +436,63 @@
         </div>
     </div>
 
+    <!-- Messages Section -->
+    <div style="margin: 0 32px 32px 32px;">
+        <h3
+            style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            💬 Kullanıcı Sohbetleri
+            <span id="unreadCount"
+                style="background: #ef4444; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem;">0</span>
+        </h3>
+
+        <!-- Free/VIP Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <button id="tabAll" onclick="loadConversations('all')"
+                style="padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; background: #6366f1; color: white;">
+                📋 Tümü
+            </button>
+            <button id="tabFree" onclick="loadConversations('free')"
+                style="padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; background: #e2e8f0; color: #64748b;">
+                👤 Free Üyeler
+            </button>
+            <button id="tabVip" onclick="loadConversations('vip')"
+                style="padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; background: #e2e8f0; color: #64748b;">
+                👑 VIP Üyeler
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 16px; height: 400px;">
+            <!-- Conversations List -->
+            <div id="conversationsList"
+                style="width: 300px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-y: auto;">
+                <div style="padding: 24px; text-align: center; color: #94a3b8;">Henüz sohbet yok</div>
+            </div>
+
+            <!-- Chat Area -->
+            <div
+                style="flex: 1; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column;">
+                <div id="chatHeader"
+                    style="padding: 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #64748b;">
+                    Sohbet seçin
+                </div>
+                <div id="adminChatMessages"
+                    style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                </div>
+                <div id="adminReplyArea" style="padding: 12px; border-top: 1px solid #e2e8f0; display: none;">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="adminReplyInput" placeholder="Cevap yazın..."
+                            style="flex: 1; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem;"
+                            onkeypress="if(event.key === 'Enter') sendAdminReply()">
+                        <button onclick="sendAdminReply()"
+                            style="padding: 10px 20px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+                            Gönder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Notification Container -->
     <div id="notificationContainer"></div>
 
@@ -784,8 +841,128 @@
         // İlk yükleme ve 2 saniyede bir güncelleme
         loadUsers();
         loadLogs();
+        loadConversations('all');
         setInterval(loadUsers, 2000);
-        setInterval(loadLogs, 5000); // Logları 5 saniyede bir güncelle
+        setInterval(loadLogs, 5000);
+        setInterval(() => loadConversations(currentTab), 5000);
+
+        // Sohbet değişkenleri
+        let currentTab = 'all';
+        let selectedUserId = null;
+
+        // Sohbet listesini yükle
+        async function loadConversations(userType) {
+            currentTab = userType;
+
+            // Tab stillerini güncelle
+            document.getElementById('tabAll').style.background = userType === 'all' ? '#6366f1' : '#e2e8f0';
+            document.getElementById('tabAll').style.color = userType === 'all' ? 'white' : '#64748b';
+            document.getElementById('tabFree').style.background = userType === 'free' ? '#6366f1' : '#e2e8f0';
+            document.getElementById('tabFree').style.color = userType === 'free' ? 'white' : '#64748b';
+            document.getElementById('tabVip').style.background = userType === 'vip' ? '#6366f1' : '#e2e8f0';
+            document.getElementById('tabVip').style.color = userType === 'vip' ? 'white' : '#64748b';
+
+            try {
+                const response = await fetch(API_URL + '/api/admin/messages?userType=' + userType);
+                const data = await response.json();
+
+                if (data.success) {
+                    const list = document.getElementById('conversationsList');
+                    let totalUnread = 0;
+
+                    if (data.conversations.length === 0) {
+                        list.innerHTML = '<div style="padding: 24px; text-align: center; color: #94a3b8;">Henüz sohbet yok</div>';
+                    } else {
+                        list.innerHTML = data.conversations.map(conv => {
+                            totalUnread += parseInt(conv.unread_count) || 0;
+                            return `
+                                <div onclick="openChat(${conv.user_id}, '${escapeHtml(conv.username)}', '${conv.user_type}')" 
+                                    style="padding: 14px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; ${selectedUserId === conv.user_id ? 'background: #f0f9ff;' : ''}"
+                                    onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${selectedUserId === conv.user_id ? '#f0f9ff' : ''}'">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <span style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(conv.username)}</span>
+                                        ${conv.user_type === 'vip' ? '<span style="background: #fbbf24; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem;">VIP</span>' : ''}
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.75rem; color: #94a3b8; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(conv.last_message || '')}</span>
+                                        ${conv.unread_count > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">${conv.unread_count}</span>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+
+                    document.getElementById('unreadCount').textContent = totalUnread;
+                }
+            } catch (error) {
+                console.error('Sohbet listesi hatası:', error);
+            }
+        }
+
+        // Sohbet aç
+        async function openChat(userId, username, userType) {
+            selectedUserId = userId;
+            document.getElementById('chatHeader').innerHTML = `<span style="font-weight: 600;">${escapeHtml(username)}</span> ${userType === 'vip' ? '<span style="background: #fbbf24; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">VIP</span>' : ''}`;
+            document.getElementById('adminReplyArea').style.display = 'block';
+
+            try {
+                const response = await fetch(API_URL + '/api/admin/messages/' + userId);
+                const data = await response.json();
+
+                if (data.success) {
+                    const container = document.getElementById('adminChatMessages');
+                    if (data.messages.length === 0) {
+                        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">Henüz mesaj yok</div>';
+                    } else {
+                        container.innerHTML = data.messages.map(msg => `
+                            <div style="display: flex; justify-content: ${msg.sender === 'admin' ? 'flex-end' : 'flex-start'};">
+                                <div style="max-width: 70%; padding: 10px 14px; border-radius: 12px; 
+                                    background: ${msg.sender === 'admin' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : '#f1f5f9'};
+                                    color: ${msg.sender === 'admin' ? 'white' : '#1e293b'};">
+                                    <p style="margin: 0; font-size: 0.85rem;">${escapeHtml(msg.message)}</p>
+                                    <span style="font-size: 0.65rem; color: ${msg.sender === 'admin' ? 'rgba(255,255,255,0.7)' : '#94a3b8'}; display: block; margin-top: 4px;">
+                                        ${new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('');
+                        container.scrollTop = container.scrollHeight;
+                    }
+                    loadConversations(currentTab);
+                }
+            } catch (error) {
+                console.error('Mesaj yükleme hatası:', error);
+            }
+        }
+
+        // Admin cevap gönder
+        async function sendAdminReply() {
+            const input = document.getElementById('adminReplyInput');
+            const message = input.value.trim();
+
+            if (!message || !selectedUserId) return;
+
+            try {
+                const response = await fetch(API_URL + '/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: selectedUserId,
+                        username: 'Admin',
+                        userType: 'admin',
+                        message: message,
+                        sender: 'admin'
+                    })
+                });
+
+                if (response.ok) {
+                    input.value = '';
+                    openChat(selectedUserId, document.getElementById('chatHeader').textContent.trim(), '');
+                }
+            } catch (error) {
+                console.error('Mesaj gönderme hatası:', error);
+            }
+        }
     </script>
 </body>
 
