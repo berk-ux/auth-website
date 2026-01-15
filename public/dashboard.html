@@ -574,6 +574,21 @@
             background-clip: text;
         }
 
+        /* Form Label Stilleri */
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #a78bfa;
+            /* FREE: Mor */
+        }
+
+        body.vip-theme .form-label {
+            color: #fbbf24;
+            /* VIP: Altın */
+        }
+
         /* Result */
         .result-section {
             margin-top: 24px;
@@ -902,13 +917,11 @@
         <div id="nameQueryScreen" style="display: none; padding: 24px;">
             <div class="content-header">
                 <h1 class="page-title">👤 Ad Soyad Sorgu</h1>
-                <span class="header-badge"
-                    style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%); color: #fbbf24;">👑
-                    VIP</span>
+                <span class="header-badge">FREE</span>
             </div>
 
             <div class="query-card">
-                <h2 class="query-title" style="color: #fbbf24;">
+                <h2 class="query-title">
                     <span>👤</span>
                     <span>Ad Soyad Sorgulama</span>
                 </h2>
@@ -917,14 +930,12 @@
                 <!-- Ad ve Soyad Yan Yana -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                     <div>
-                        <label
-                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Ad
+                        <label class="form-label">Ad
                             <span style="color: #94a3b8; font-weight: 400;">(Zorunlu)</span></label>
                         <input type="text" class="query-input" id="adInput" placeholder="Ad" style="margin-bottom: 0;">
                     </div>
                     <div>
-                        <label
-                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Soyad
+                        <label class="form-label">Soyad
                             <span style="color: #94a3b8; font-weight: 400;">(Zorunlu)</span></label>
                         <input type="text" class="query-input" id="soyadInput" placeholder="Soyad"
                             style="margin-bottom: 0;">
@@ -934,23 +945,19 @@
                 <!-- İl ve İlçe Yan Yana -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                     <div>
-                        <label
-                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">İl
+                        <label class="form-label">İl
                             <span style="color: #94a3b8; font-weight: 400;">(Opsiyonel)</span></label>
                         <input type="text" class="query-input" id="ilInput" placeholder="İl" style="margin-bottom: 0;">
                     </div>
                     <div>
-                        <label
-                            style="display: block; color: #fbbf24; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">İlçe
+                        <label class="form-label">İlçe
                             <span style="color: #94a3b8; font-weight: 400;">(Opsiyonel)</span></label>
                         <input type="text" class="query-input" id="ilceInput" placeholder="İlçe"
                             style="margin-bottom: 0;">
                     </div>
                 </div>
 
-                <button class="query-btn" onclick="executeNameQuery()"
-                    style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000;">🔍
-                    Sorgula</button>
+                <button class="query-btn" onclick="executeNameQuery()">🔍 Sorgula</button>
 
                 <div class="result-section" id="nameResultSection">
                     <div class="result-content" id="nameResultContent"></div>
