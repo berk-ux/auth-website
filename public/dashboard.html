@@ -647,12 +647,24 @@
 
         /* Footer */
         .footer {
-            margin-top: auto;
-            padding: 20px;
+            position: fixed;
+            bottom: 0;
+            left: 260px;
+            right: 0;
+            padding: 12px 20px;
             text-align: center;
             color: #475569;
             font-size: 0.75rem;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
             border-top: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            .footer {
+                left: 0;
+            }
         }
 
         /* Input Grid - responsive */
