@@ -785,15 +785,43 @@
                 padding: 16px;
             }
 
-            /* Hamburger menü her zaman görünür */
+            /* Hamburger menü - sidebar kapalıyken ana sayfada görünür */
             .hamburger-btn {
                 display: flex !important;
                 position: fixed;
                 top: 16px;
                 left: 16px;
-                z-index: 1001;
+                z-index: 1002;
                 background: rgba(30, 41, 59, 0.95);
                 backdrop-filter: blur(10px);
+            }
+
+            /* Sidebar açıkken hamburger sidebar içinde sağ üst köşede */
+            .sidebar.open .hamburger-close {
+                display: flex;
+            }
+
+            .hamburger-close {
+                display: none;
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                width: 36px;
+                height: 36px;
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                border-radius: 8px;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                font-size: 1.2rem;
+                color: #94a3b8;
+                z-index: 10;
+            }
+
+            .hamburger-close:hover {
+                background: rgba(255, 255, 255, 0.2);
+                color: #fff;
             }
 
             /* Overlay for mobile menu */
@@ -899,6 +927,9 @@
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebarMenu">
+        <!-- Mobile Close Button -->
+        <button class="hamburger-close" onclick="toggleSidebar()">✕</button>
+
         <!-- User Profile -->
         <div class="user-profile">
             <div class="user-avatar" id="userAvatar">?</div>
@@ -1375,6 +1406,19 @@
         let currentQueryType = '';
         let currentIsVip = false;
 
+        // 📱 Mobilde sidebar'ı kapat (sorgu seçiminde çağrılır)
+        function closeSidebarOnMobile() {
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebarMenu');
+                const overlay = document.getElementById('sidebarOverlay');
+                const hamburger = document.getElementById('hamburgerBtn');
+
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+                hamburger.classList.remove('open');
+            }
+        }
+
         // ☰ Sidebar Toggle Fonksiyonu (Mobil Uyumlu)
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebarMenu');
@@ -1405,6 +1449,9 @@
 
         // 👤 AD SOYAD SORGU SCREEN
         function showNameQuery() {
+            // 📱 Mobilde sidebar'ı kapat
+            closeSidebarOnMobile();
+
             document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'none';
@@ -1481,6 +1528,9 @@
         }
 
         function showQuery(type, name, desc, placeholder, isVipQuery = false) {
+            // 📱 Mobilde sidebar'ı kapat
+            closeSidebarOnMobile();
+
             document.getElementById('freeUserScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'block';
