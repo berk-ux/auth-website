@@ -785,7 +785,7 @@
                 padding: 16px;
             }
 
-            /* Hamburger menü - sidebar kapalıyken ana sayfada görünür */
+            /* Hamburger menü - sidebar kapalıyken görünür */
             .hamburger-btn {
                 display: flex !important;
                 position: fixed;
@@ -794,6 +794,12 @@
                 z-index: 1002;
                 background: rgba(30, 41, 59, 0.95);
                 backdrop-filter: blur(10px);
+            }
+
+            /* Sidebar açıkken hamburger butonu gizle */
+            .sidebar.open~.hamburger-btn,
+            body:has(.sidebar.open) .hamburger-btn {
+                display: none !important;
             }
 
             /* Sidebar açıkken hamburger sidebar içinde sağ üst köşede */
