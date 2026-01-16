@@ -958,9 +958,9 @@
                 <span class="menu-icon">🏠</span>
                 Ana Sayfa
             </div>
-            <div class="menu-item">
-                <span class="menu-icon">📊</span>
-                Kullanıcı Sıralaması
+            <div class="menu-item" onclick="showUserProfile()">
+                <span class="menu-icon">👤</span>
+                Kullanıcı Hakkında
             </div>
         </nav>
 
@@ -1236,6 +1236,66 @@
             </div>
         </div>
 
+        <!-- 👤 KULLANICI HAKKINDA SCREEN -->
+        <div id="userProfileScreen" style="display: none; padding: 24px;">
+            <div class="content-header">
+                <h1 class="page-title">👤 Kullanıcı Hakkında</h1>
+            </div>
+
+            <div class="query-card" style="max-width: 600px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div id="profileAvatar"
+                        style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; margin: 0 auto 16px; font-weight: bold;">
+                        ?</div>
+                    <h2 id="profileUsername" style="color: #e2e8f0; margin: 0 0 4px 0;">Kullanıcı</h2>
+                    <span id="profileBadge"
+                        style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(99, 102, 241, 0.2); color: #818cf8;">Free
+                        Üyelik</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <!-- Kayıt Tarihi -->
+                    <div
+                        style="background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px;">
+                        <div
+                            style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            📅</div>
+                        <div>
+                            <div style="color: #64748b; font-size: 0.75rem; margin-bottom: 4px;">Kayıt Tarihi</div>
+                            <div id="profileRegDate" style="color: #e2e8f0; font-weight: 600;">Yükleniyor...</div>
+                        </div>
+                    </div>
+
+                    <!-- Toplam Sorgu Sayısı -->
+                    <div
+                        style="background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px;">
+                        <div
+                            style="width: 48px; height: 48px; border-radius: 12px; background: rgba(34, 197, 94, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            🔍</div>
+                        <div>
+                            <div style="color: #64748b; font-size: 0.75rem; margin-bottom: 4px;">Toplam Sorgu Sayısı
+                            </div>
+                            <div id="profileQueryCount" style="color: #22c55e; font-weight: 600; font-size: 1.25rem;">0
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sitede Kalma Süresi -->
+                    <div
+                        style="background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px;">
+                        <div
+                            style="width: 48px; height: 48px; border-radius: 12px; background: rgba(251, 191, 36, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            ⏱️</div>
+                        <div>
+                            <div style="color: #64748b; font-size: 0.75rem; margin-bottom: 4px;">Sitede Kalma Süresi
+                            </div>
+                            <div id="profileTimeSpent" style="color: #fbbf24; font-weight: 600;">Hesaplanıyor...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <footer class="footer">
             © 2026 <strong>BWEB</strong> - Tüm hakları gizli ve saklıdır.
@@ -1451,6 +1511,86 @@
             document.getElementById('welcomeScreen').style.display = 'block';
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('nameQueryScreen').style.display = 'none';
+            document.getElementById('userProfileScreen').style.display = 'none';
+        }
+
+        // 👤 KULLANICI HAKKINDA SCREEN
+        async function showUserProfile() {
+            // 📱 Mobilde sidebar'ı kapat
+            closeSidebarOnMobile();
+
+            document.getElementById('freeUserScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('queryScreen').style.display = 'none';
+            document.getElementById('nameQueryScreen').style.display = 'none';
+            document.getElementById('userProfileScreen').style.display = 'block';
+
+            // Kullanıcı bilgilerini localStorage'dan al
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
+            // Avatar ve isim
+            const username = userData.username || 'Kullanıcı';
+            document.getElementById('profileAvatar').textContent = username.charAt(0).toUpperCase();
+            document.getElementById('profileUsername').textContent = username;
+
+            // VIP/Free badge
+            const isVip = userData.role === 'vip' || userData.user_type === 'vip';
+            const badge = document.getElementById('profileBadge');
+            if (isVip) {
+                badge.textContent = '👑 VIP Üyelik';
+                badge.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.3) 100%)';
+                badge.style.color = '#fbbf24';
+            } else {
+                badge.textContent = '○ Free Üyelik';
+                badge.style.background = 'rgba(99, 102, 241, 0.2)';
+                badge.style.color = '#818cf8';
+            }
+
+            // API'den kullanıcı istatistiklerini al
+            try {
+                const response = await fetch(`${API_URL}/api/user/stats?userId=${userData.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const stats = await response.json();
+
+                    // Kayıt tarihi
+                    const regDate = new Date(stats.created_at);
+                    document.getElementById('profileRegDate').textContent = regDate.toLocaleDateString('tr-TR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+
+                    // Sorgu sayısı
+                    document.getElementById('profileQueryCount').textContent = stats.query_count || 0;
+
+                    // Sitede kalma süresi
+                    const totalMinutes = stats.total_time_spent || 0;
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    if (hours > 0) {
+                        document.getElementById('profileTimeSpent').textContent = `${hours} saat ${minutes} dakika`;
+                    } else {
+                        document.getElementById('profileTimeSpent').textContent = `${minutes} dakika`;
+                    }
+                } else {
+                    // Fallback değerler
+                    document.getElementById('profileRegDate').textContent = 'Bilinmiyor';
+                    document.getElementById('profileQueryCount').textContent = '0';
+                    document.getElementById('profileTimeSpent').textContent = 'Hesaplanamadı';
+                }
+            } catch (error) {
+                console.error('Profil bilgileri alınamadı:', error);
+                document.getElementById('profileRegDate').textContent = 'Bilinmiyor';
+                document.getElementById('profileQueryCount').textContent = '0';
+                document.getElementById('profileTimeSpent').textContent = 'Hesaplanamadı';
+            }
         }
 
         // 👤 AD SOYAD SORGU SCREEN
@@ -1462,6 +1602,7 @@
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('nameQueryScreen').style.display = 'block';
+            document.getElementById('userProfileScreen').style.display = 'none';
 
             // Inputları temizle
             document.getElementById('adInput').value = '';
@@ -1541,6 +1682,7 @@
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'block';
             document.getElementById('nameQueryScreen').style.display = 'none';
+            document.getElementById('userProfileScreen').style.display = 'none';
 
             document.getElementById('pageTitle').textContent = name;
             document.getElementById('queryName').textContent = name;

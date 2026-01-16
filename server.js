@@ -573,6 +573,57 @@ app.post('/api/heartbeat', async (req, res) => {
     }
 });
 
+// 👤 Kullanıcı İstatistikleri (Profil sayfası için)
+app.get('/api/user/stats', async (req, res) => {
+    try {
+        // Token'dan user id'yi al
+        const authHeader = req.headers['authorization'];
+        if (!authHeader) {
+            return res.status(401).json({ success: false, message: 'Token gerekli!' });
+        }
+
+        // Bearer token'dan user bilgilerini çıkar
+        // Token yerine localStorage user objesinden gelen id kullanıyoruz
+        // Client tarafında fetch'e userId ekleyeceğiz
+        const userId = req.query.userId;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'User ID gerekli!' });
+        }
+
+        // Kullanıcı bilgilerini al
+        const userResult = await pool.query(
+            'SELECT created_at, total_time_seconds FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı!' });
+        }
+
+        // Sorgu sayısını activity_logs tablosundan al
+        const queryCountResult = await pool.query(
+            "SELECT COUNT(*) as count FROM activity_logs WHERE user_id = $1 AND action_type LIKE '%SORGU%'",
+            [userId]
+        );
+
+        const user = userResult.rows[0];
+        const queryCount = parseInt(queryCountResult.rows[0].count) || 0;
+        const totalTimeMinutes = Math.floor((user.total_time_seconds || 0) / 60);
+
+        res.json({
+            success: true,
+            created_at: user.created_at,
+            query_count: queryCount,
+            total_time_spent: totalTimeMinutes
+        });
+
+    } catch (error) {
+        console.error('❌ Stats hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
 // 🛡️ Admin Giriş
 app.post('/api/admin/login', (req, res) => {
     const { email, password } = req.body;
