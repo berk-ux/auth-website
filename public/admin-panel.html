@@ -1082,8 +1082,11 @@
         window.toggleBan = toggleBan;
 
         // 🔍 Kullanıcı Arama
+        let isSearchActive = false; // Arama aktifken otomatik yenileme durdurulur
+
         async function searchUsers() {
             const searchTerm = document.getElementById('searchInput').value.trim();
+            isSearchActive = true; // Aramayı aktif olarak işaretle
 
             if (searchTerm.length < 3) {
                 document.getElementById('searchResults').innerHTML = '<span style="color: #f59e0b;">En az 3 karakter girin!</span>';
@@ -1155,6 +1158,7 @@
         function clearSearch() {
             document.getElementById('searchInput').value = '';
             document.getElementById('searchResults').innerHTML = '';
+            isSearchActive = false; // Aramayı kapat, otomatik yenileme devam etsin
             loadUsers(); // Tüm kullanıcıları yeniden yükle
         }
 
@@ -1200,7 +1204,7 @@
         loadUsers();
         loadLogs();
         loadConversations('all');
-        setInterval(loadUsers, 2000);
+        setInterval(() => { if (!isSearchActive) loadUsers(); }, 2000);
         setInterval(loadLogs, 5000);
         setInterval(() => loadConversations(currentTab), 5000);
 
