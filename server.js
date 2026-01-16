@@ -1224,7 +1224,197 @@ app.get('/api/admin/messages/:userId', async (req, res) => {
     }
 });
 
+// ========== EXTERNAL API ENTEGRASYONU ==========
+// Anonymcheck.com.tr API proxy endpoint'leri
+
+// External API credentials
+const EXTERNAL_API_URL = 'http://anonymcheck.com.tr';
+const EXTERNAL_USERNAME = 'FlashBedava123';
+const EXTERNAL_PASSWORD = 'FlashBedava123';
+
+// Session cookie cache
+let externalSessionCookie = null;
+let sessionExpiry = null;
+
+// External API'ye login olup session cookie al
+async function getExternalSession() {
+    // Session varsa ve geçerli ise kullan
+    if (externalSessionCookie && sessionExpiry && Date.now() < sessionExpiry) {
+        return externalSessionCookie;
+    }
+
+    try {
+        console.log('🔐 Anonymcheck.com.tr oturumu açılıyor...');
+
+        const loginResponse = await fetch(`${EXTERNAL_API_URL}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `username=${EXTERNAL_USERNAME}&password=${EXTERNAL_PASSWORD}`,
+            redirect: 'manual'
+        });
+
+        // Set-Cookie header'ından PHPSESSID al
+        const cookies = loginResponse.headers.get('set-cookie');
+        if (cookies) {
+            const match = cookies.match(/PHPSESSID=([^;]+)/);
+            if (match) {
+                externalSessionCookie = `PHPSESSID=${match[1]}`;
+                sessionExpiry = Date.now() + (30 * 60 * 1000); // 30 dakika geçerli
+                console.log('✅ External session alındı');
+                return externalSessionCookie;
+            }
+        }
+
+        return externalSessionCookie;
+    } catch (error) {
+        console.error('❌ External login hatası:', error.message);
+        return null;
+    }
+}
+
+// External API'ye sorgu yap
+async function queryExternalAPI(type, params) {
+    const session = await getExternalSession();
+
+    // URL encoded body oluştur
+    const bodyParams = new URLSearchParams();
+    bodyParams.append('type', type);
+
+    // Parametreleri ekle
+    for (const [key, value] of Object.entries(params)) {
+        if (value) bodyParams.append(key, value);
+    }
+
+    try {
+        const response = await fetch(`${EXTERNAL_API_URL}/proxy.php`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie': session || ''
+            },
+            body: bodyParams.toString()
+        });
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error(`❌ External API sorgu hatası (${type}):`, error.message);
+        return { error: true, message: 'Bağlantı hatası!' };
+    }
+}
+
+// 🔍 TC Sorgu Endpoint
+app.post('/api/external/tc', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin (11 hane)!'
+            });
+        }
+
+        console.log(`🔍 TC Sorgu: ${tc.substring(0, 3)}*****${tc.substring(8)}`);
+
+        const result = await queryExternalAPI('tc', { value: tc });
+
+        // Aktivite log kaydet
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'TC_SORGU', `TC sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message || 'Sonuç bulunamadı!' });
+        }
+
+        res.json({ success: true, data: result.data || result });
+
+    } catch (error) {
+        console.error('❌ TC sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Ad Soyad Sorgu Endpoint
+app.post('/api/external/adsoyad', async (req, res) => {
+    try {
+        const { ad, soyad, il, ilce, yil, userId } = req.body;
+
+        if (!ad || !soyad) {
+            return res.status(400).json({
+                success: false,
+                message: 'Ad ve soyad gerekli!'
+            });
+        }
+
+        console.log(`🔍 Ad Soyad Sorgu: ${ad} ${soyad}`);
+
+        const result = await queryExternalAPI('adsoyad', { ad, soyad, il, ilce, yil });
+
+        // Aktivite log kaydet
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'ADSOYAD_SORGU', `Ad Soyad sorgusu: ${ad} ${soyad}`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message || 'Sonuç bulunamadı!' });
+        }
+
+        res.json({ success: true, data: result.data || result });
+
+    } catch (error) {
+        console.error('❌ Ad Soyad sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Aile Sorgu Endpoint
+app.post('/api/external/aile', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin (11 hane)!'
+            });
+        }
+
+        console.log(`🔍 Aile Sorgu: ${tc.substring(0, 3)}*****${tc.substring(8)}`);
+
+        const result = await queryExternalAPI('aile', { value: tc });
+
+        // Aktivite log kaydet
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'AILE_SORGU', `Aile sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message || 'Sonuç bulunamadı!' });
+        }
+
+        res.json({ success: true, data: result.data || result });
+
+    } catch (error) {
+        console.error('❌ Aile sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
 // ========== STATIC FILES ==========
+
 
 // Ana sayfa yönlendirmesi
 app.get('/', (req, res) => {

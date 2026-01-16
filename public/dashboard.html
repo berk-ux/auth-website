@@ -1684,22 +1684,48 @@
             document.getElementById('nameResultSection').classList.add('show');
 
             try {
-                const response = await fetch('/api/query', {
+                // External API kullan
+                const response = await fetch('/api/external/adsoyad', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        type: 'name',
-                        value: { ad, soyad, il, ilce },
+                        ad: ad.toUpperCase(),
+                        soyad: soyad.toUpperCase(),
+                        il: il.toUpperCase() || undefined,
+                        ilce: ilce.toUpperCase() || undefined,
                         userId: user.id
                     })
                 });
 
                 const result = await response.json();
 
-                if (result.success) {
-                    document.getElementById('nameResultContent').innerHTML = result.data;
+                if (result.success && result.data) {
+                    // JSON veriyi tablo olarak göster
+                    const data = Array.isArray(result.data) ? result.data : [result.data];
+                    if (data.length === 0) {
+                        document.getElementById('nameResultContent').innerHTML = '❌ Sonuç bulunamadı';
+                    } else {
+                        let html = `<p style="color: #22c55e; margin-bottom: 12px;">✅ ${data.length} sonuç bulundu</p>`;
+                        html += '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; min-width: 600px;">';
+                        data.forEach((item, index) => {
+                            if (index === 0) {
+                                html += '<tr style="background: rgba(99, 102, 241, 0.2);">';
+                                Object.keys(item).forEach(key => {
+                                    html += `<th style="padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); color: #a5b4fc; white-space: nowrap;">${key}</th>`;
+                                });
+                                html += '</tr>';
+                            }
+                            html += '<tr>';
+                            Object.values(item).forEach(val => {
+                                html += `<td style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0;">${val || '-'}</td>`;
+                            });
+                            html += '</tr>';
+                        });
+                        html += '</table></div>';
+                        document.getElementById('nameResultContent').innerHTML = html;
+                    }
                 } else {
-                    document.getElementById('nameResultContent').innerHTML = `❌ Hata: ${result.message}`;
+                    document.getElementById('nameResultContent').innerHTML = `❌ Hata: ${result.message || 'Sonuç bulunamadı'}`;
                 }
             } catch (error) {
                 document.getElementById('nameResultContent').innerHTML = '❌ Bağlantı hatası. Lütfen tekrar deneyin.';
@@ -1831,18 +1857,52 @@
             document.getElementById('resultSection').classList.add('show');
 
             try {
-                const response = await fetch('/api/query', {
+                let endpoint = '/api/query';
+                let body = { type: currentQueryType, value, userId: user.id };
+
+                // TC ve Aile sorguları için external API kullan
+                if (currentQueryType === 'tc') {
+                    endpoint = '/api/external/tc';
+                    body = { tc: value, userId: user.id };
+                } else if (currentQueryType === 'family') {
+                    endpoint = '/api/external/aile';
+                    body = { tc: value, userId: user.id };
+                }
+
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: currentQueryType, value, userId: user.id })
+                    body: JSON.stringify(body)
                 });
 
                 const result = await response.json();
 
-                if (result.success) {
-                    document.getElementById('resultContent').innerHTML = result.data;
+                if (result.success && result.data) {
+                    // JSON veriyi tablo olarak göster
+                    const data = Array.isArray(result.data) ? result.data : [result.data];
+                    if (data.length === 0) {
+                        document.getElementById('resultContent').innerHTML = '❌ Sonuç bulunamadı';
+                    } else {
+                        let html = '<table style="width: 100%; border-collapse: collapse;">';
+                        data.forEach((item, index) => {
+                            if (index === 0) {
+                                html += '<tr style="background: rgba(99, 102, 241, 0.2);">';
+                                Object.keys(item).forEach(key => {
+                                    html += `<th style="padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); color: #a5b4fc;">${key}</th>`;
+                                });
+                                html += '</tr>';
+                            }
+                            html += '<tr>';
+                            Object.values(item).forEach(val => {
+                                html += `<td style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0;">${val || '-'}</td>`;
+                            });
+                            html += '</tr>';
+                        });
+                        html += '</table>';
+                        document.getElementById('resultContent').innerHTML = html;
+                    }
                 } else {
-                    document.getElementById('resultContent').innerHTML = `❌ Hata: ${result.message}`;
+                    document.getElementById('resultContent').innerHTML = `❌ Hata: ${result.message || 'Sonuç bulunamadı'}`;
                     document.getElementById('resultContent').style.color = '#f87171';
                 }
             } catch (error) {
