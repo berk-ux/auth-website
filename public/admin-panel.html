@@ -162,7 +162,8 @@
         .table-container {
             background: rgba(255, 255, 255, 0.03);
             border-radius: 20px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: visible;
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(10px);
         }
@@ -874,11 +875,15 @@
                             <td>
                                 ${formatLastActive(user.last_active)}
                             </td>
-                            <td>
-                                <div style="font-size: 0.75rem;">
-                                    <div style="font-weight: 600; color: #f1f5f9;">${getDeviceIcon(user.device_info)} ${user.device_info || '-'}</div>
-                                    <div style="color: #94a3b8;">${user.browser_info || '-'} / ${user.os_info || '-'}</div>
-                                </div>
+                            <td style="min-width: 140px;">
+                                ${user.device_info ? `
+                                    <div style="font-size: 0.75rem;">
+                                        <div style="font-weight: 600; color: #a5b4fc;">${getDeviceIcon(user.device_info)} ${user.device_info}</div>
+                                        <div style="color: #64748b; font-size: 0.7rem;">${user.browser_info || ''} ${user.os_info ? '• ' + user.os_info : ''}</div>
+                                    </div>
+                                ` : `
+                                    <span style="color: #475569; font-size: 0.7rem;">📵 Veri yok</span>
+                                `}
                             </td>
                             <td class="user-email">${escapeHtml(user.email)}</td>
                             <td>
@@ -897,24 +902,28 @@
                                     </span>
                                 </div>
                             </td>
-                            <td style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button onclick="toggleVip(${user.id})" title="${user.user_type === 'vip' ? 'VIP kaldır' : 'VIP yap'}"
-                                    style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
-                                    background: ${user.user_type === 'vip' ? '#e2e8f0' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'};
-                                    color: ${user.user_type === 'vip' ? '#64748b' : 'white'};">
-                                    ${user.user_type === 'vip' ? '👤 Free' : '👑 VIP'}
-                                </button>
-                                <button onclick="toggleBan(${user.id})" title="${user.is_banned ? 'Kısıtlamayı kaldır' : 'Kullanıcıyı kısıtla'}"
-                                    style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
-                                    background: ${user.is_banned ? '#22c55e' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
-                                    color: white;">
-                                    ${user.is_banned ? '✓ Aktif Et' : '🚫 Kısıtla'}
-                                </button>
-                                <button class="btn-delete" onclick="deleteUser(${user.id})">
-                                    🗑️
-                                </button>
+                            <td style="min-width: 180px; white-space: nowrap;">
+                                <div style="display: inline-flex; gap: 6px; align-items: center;">
+                                    <button onclick="toggleVip(${user.id})" title="${user.user_type === 'vip' ? 'VIP kaldır' : 'VIP yap'}"
+                                        style="padding: 5px 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-weight: 600;
+                                        background: ${user.user_type === 'vip' ? '#475569' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'};
+                                        color: ${user.user_type === 'vip' ? '#94a3b8' : 'white'};">
+                                        ${user.user_type === 'vip' ? '👤' : '👑'}
+                                    </button>
+                                    <button onclick="toggleBan(${user.id})" title="${user.is_banned ? 'Kısıtlamayı kaldır' : 'Kullanıcıyı kısıtla'}"
+                                        style="padding: 5px 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-weight: 600;
+                                        background: ${user.is_banned ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
+                                        color: white;">
+                                        ${user.is_banned ? '✓' : '🚫'}
+                                    </button>
+                                    <button onclick="deleteUser(${user.id})" title="Kullanıcıyı sil"
+                                        style="padding: 5px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.7rem;
+                                        background: #374151; color: #9ca3af;">
+                                        🗑️
+                                    </button>
+                                </div>
                             </td>
-                        </tr >
+                        </tr>
                         `).join('');
                 }
             } catch (error) {
