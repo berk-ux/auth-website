@@ -123,6 +123,23 @@ async function initDatabase() {
             await pool.query("ALTER TABLE users ADD COLUMN os_info VARCHAR(255)");
         } catch (e) { }
 
+        // Banned devices tablosu oluştur (cihaz bazlı engelleme için)
+        try {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS banned_devices (
+                    id SERIAL PRIMARY KEY,
+                    device_fingerprint VARCHAR(500) UNIQUE NOT NULL,
+                    user_agent TEXT,
+                    ip_address VARCHAR(100),
+                    banned_user_id INTEGER,
+                    banned_username VARCHAR(100),
+                    ban_reason TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            console.log('✅ banned_devices tablosu hazır');
+        } catch (e) { }
+
         // ID numarasını 39237'den başlat (eğer henüz kullanıcı yoksa)
         const result = await pool.query('SELECT COUNT(*) as count FROM users');
         if (parseInt(result.rows[0].count) === 0) {
@@ -260,6 +277,23 @@ function parseUserAgent(userAgent) {
     return { device, browser, os };
 }
 
+// Cihaz Fingerprint Oluştur
+function createDeviceFingerprint(req) {
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
+        req.headers['x-real-ip'] ||
+        req.connection?.remoteAddress ||
+        req.ip || 'unknown';
+
+    // User-Agent + IP kombinasyonu (basit fingerprint)
+    const crypto = require('crypto');
+    const fingerprint = crypto.createHash('sha256')
+        .update(userAgent + ip)
+        .digest('hex');
+
+    return { fingerprint, userAgent, ip };
+}
+
 // ========== API ENDPOINTS ==========
 
 // 🔐 Kullanıcı Kayıt
@@ -377,6 +411,22 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Lütfen tüm alanları doldurun!'
+            });
+        }
+
+        // 🚫 BANNED DEVICE KONTROLÜ
+        const deviceData = createDeviceFingerprint(req);
+        const bannedCheck = await pool.query(
+            'SELECT * FROM banned_devices WHERE device_fingerprint = $1',
+            [deviceData.fingerprint]
+        );
+
+        if (bannedCheck.rows.length > 0) {
+            const bannedDevice = bannedCheck.rows[0];
+            console.log(`🚫 Engellenmiş cihazdan giriş denemesi: ${deviceData.ip}`);
+            return res.status(403).json({
+                success: false,
+                message: `Bu cihaz engellenmiştir! Sebep: ${bannedDevice.ban_reason || 'Belirtilmemiş'}`
             });
         }
 
@@ -707,7 +757,7 @@ app.put('/api/admin/users/:id/toggle-ban', async (req, res) => {
         const { reason } = req.body;
 
         // Mevcut kullanıcıyı bul
-        const user = await pool.query('SELECT is_banned, username FROM users WHERE id = $1', [id]);
+        const user = await pool.query('SELECT is_banned, username, device_info, browser_info, os_info, ip_address FROM users WHERE id = $1', [id]);
 
         if (user.rows.length === 0) {
             return res.status(404).json({
@@ -726,11 +776,45 @@ app.put('/api/admin/users/:id/toggle-ban', async (req, res) => {
             [newBan, banReason, id]
         );
 
+        // 🔒 CİHAZ BAZLI ENGELLEME
+        if (newBan) {
+            // Ban uygulandığında cihazı engelle
+            const userAgent = user.rows[0].browser_info + ' / ' + user.rows[0].os_info;
+            const ip = user.rows[0].ip_address || 'unknown';
+
+            // Basit fingerprint: kullanıcının son kullandığı cihaz bilgisi
+            const crypto = require('crypto');
+            const fingerprint = crypto.createHash('sha256')
+                .update((user.rows[0].device_info || '') + (user.rows[0].browser_info || '') + (user.rows[0].os_info || '') + ip)
+                .digest('hex');
+
+            // Cihazı banned_devices tablosuna ekle
+            try {
+                await pool.query(
+                    `INSERT INTO banned_devices (device_fingerprint, user_agent, ip_address, banned_user_id, banned_username, ban_reason)
+                     VALUES ($1, $2, $3, $4, $5, $6)
+                     ON CONFLICT (device_fingerprint) DO UPDATE SET ban_reason = $6`,
+                    [fingerprint, userAgent, ip, id, user.rows[0].username, banReason]
+                );
+                console.log(`🔒 Cihaz engellendi: ${user.rows[0].username} - ${user.rows[0].device_info || 'Unknown'}`);
+            } catch (deviceErr) {
+                console.error('Cihaz ekleme hatası:', deviceErr.message);
+            }
+        } else {
+            // Ban kaldırıldığında kullanıcıyla ilişkili tüm cihazları serbest bırak
+            try {
+                await pool.query('DELETE FROM banned_devices WHERE banned_user_id = $1', [id]);
+                console.log(`🔓 Cihaz serbest bırakıldı: ${user.rows[0].username}`);
+            } catch (deviceErr) {
+                console.error('Cihaz silme hatası:', deviceErr.message);
+            }
+        }
+
         console.log(`🚫 Kullanıcı ${user.rows[0].username}: ${currentBan ? 'Ban kaldırıldı' : 'Ban uygulandı'}`);
 
         res.json({
             success: true,
-            message: newBan ? 'Kullanıcı kısıtlandı!' : 'Kısıtlama kaldırıldı!',
+            message: newBan ? 'Kullanıcı ve cihazı kısıtlandı!' : 'Kısıtlama kaldırıldı!',
             isBanned: newBan
         });
 
