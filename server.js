@@ -1236,19 +1236,17 @@ const EXTERNAL_PASSWORD = 'FlashBedava123';
 let externalSessionCookie = null;
 let sessionExpiry = null;
 
-// External API'ye login olup session cookie al
-async function getExternalSession(forceNew = false) {
-    // Session varsa ve geçerli ise kullan (force değilse)
-    if (!forceNew && externalSessionCookie && sessionExpiry && Date.now() < sessionExpiry) {
-        return externalSessionCookie;
-    }
-
+// External API'ye login olup session cookie al (her seferinde fresh)
+async function getExternalSession() {
     try {
         console.log('🔐 Anonymcheck.com.tr oturumu açılıyor...');
 
         // İlk olarak login sayfasını ziyaret et (cookie almak için)
         const initResponse = await fetch(`${EXTERNAL_API_URL}/login`, {
             method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
             redirect: 'follow'
         });
 
@@ -1259,6 +1257,7 @@ async function getExternalSession(forceNew = false) {
         const initMatch = cookies.match(/PHPSESSID=([^;]+)/);
         if (initMatch) {
             sessionId = initMatch[1];
+            console.log('📦 İlk session:', sessionId.substring(0, 8) + '...');
         }
 
         // Şimdi login yap
@@ -1266,7 +1265,9 @@ async function getExternalSession(forceNew = false) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Cookie': sessionId ? `PHPSESSID=${sessionId}` : ''
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Cookie': sessionId ? `PHPSESSID=${sessionId}` : '',
+                'Referer': `${EXTERNAL_API_URL}/login`
             },
             body: `username=${EXTERNAL_USERNAME}&password=${EXTERNAL_PASSWORD}`,
             redirect: 'manual'
@@ -1278,13 +1279,13 @@ async function getExternalSession(forceNew = false) {
 
         if (loginMatch) {
             sessionId = loginMatch[1];
+            console.log('🔐 Login sonrası session:', sessionId.substring(0, 8) + '...');
         }
 
         if (sessionId) {
-            externalSessionCookie = `PHPSESSID=${sessionId}`;
-            sessionExpiry = Date.now() + (5 * 60 * 1000); // 5 dakika geçerli (daha kısa)
-            console.log('✅ External session alındı:', sessionId.substring(0, 8) + '...');
-            return externalSessionCookie;
+            const fullCookie = `PHPSESSID=${sessionId}`;
+            console.log('✅ Session hazır');
+            return fullCookie;
         }
 
         console.log('⚠️ Session cookie alınamadı');
@@ -1295,9 +1296,11 @@ async function getExternalSession(forceNew = false) {
     }
 }
 
+
 // External API'ye sorgu yap
-async function queryExternalAPI(type, params, retryCount = 0) {
-    const session = await getExternalSession(retryCount > 0);
+async function queryExternalAPI(type, params) {
+    const session = await getExternalSession();
+
 
     if (!session) {
         return { error: true, message: 'Oturum açılamadı!' };
@@ -1313,48 +1316,33 @@ async function queryExternalAPI(type, params, retryCount = 0) {
     }
 
     try {
-        console.log(`🔍 External API sorgusu: type=${type}, session=${session.substring(0, 20)}...`);
+        console.log(`🔍 External API sorgusu: type=${type}`);
 
         const response = await fetch(`${EXTERNAL_API_URL}/proxy.php`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Cookie': session
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Cookie': session,
+                'Referer': `${EXTERNAL_API_URL}/dashboard`
             },
             body: bodyParams.toString()
         });
 
         const text = await response.text();
-        console.log('📄 External API yanıt:', text.substring(0, 200));
+        console.log('📄 External API yanıt:', text.substring(0, 300));
 
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
-            // HTML döndü, muhtemelen login gerekiyor
-            if (text.includes('login') || text.includes('oturum') || text.includes('giriş')) {
-                if (retryCount < 2) {
-                    console.log('🔄 Session süresi dolmuş, yeniden giriş yapılıyor...');
-                    externalSessionCookie = null; // Session'ı sıfırla
-                    sessionExpiry = null;
-                    return await queryExternalAPI(type, params, retryCount + 1);
-                }
-            }
+            console.log('⚠️ JSON parse hatası');
             return { error: true, message: 'Geçersiz yanıt formatı' };
-        }
-
-        // Session hatası kontrolü
-        if (data.error && (data.message?.includes('oturum') || data.message?.includes('giriş'))) {
-            if (retryCount < 2) {
-                console.log('🔄 Session hatası, yeniden giriş yapılıyor...');
-                externalSessionCookie = null;
-                sessionExpiry = null;
-                return await queryExternalAPI(type, params, retryCount + 1);
-            }
         }
 
         return data;
     } catch (error) {
+
         console.error(`❌ External API sorgu hatası (${type}):`, error.message);
         return { error: true, message: 'Bağlantı hatası!' };
     }
