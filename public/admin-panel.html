@@ -554,24 +554,24 @@
                             style="background: #6366f1; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem;">0</span>
                     </h3>
                     <div
-                        style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); max-height: 400px; overflow-y: auto;">
+                        style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); max-height: 400px; overflow-y: auto; border: 1px solid rgba(99, 102, 241, 0.2);">
                         <table style="width: 100%; border-collapse: collapse;">
-                            <thead style="position: sticky; top: 0; background: #f8fafc;">
+                            <thead style="position: sticky; top: 0; background: #1e293b;">
                                 <tr>
                                     <th
-                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        style="padding: 14px 16px; text-align: left; font-size: 0.8rem; color: #a5b4fc; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
                                         Zaman</th>
                                     <th
-                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        style="padding: 14px 16px; text-align: left; font-size: 0.8rem; color: #a5b4fc; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
                                         Kullanıcı</th>
                                     <th
-                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        style="padding: 14px 16px; text-align: left; font-size: 0.8rem; color: #a5b4fc; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
                                         İşlem</th>
                                     <th
-                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        style="padding: 14px 16px; text-align: left; font-size: 0.8rem; color: #a5b4fc; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
                                         Detay</th>
                                     <th
-                                        style="padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                                        style="padding: 14px 16px; text-align: left; font-size: 0.8rem; color: #a5b4fc; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600;">
                                         IP</th>
                                 </tr>
                             </thead>
@@ -1015,7 +1015,7 @@
             const reason = prompt('Kısıtlama sebebi (boş bırakabilirsiniz):');
 
             try {
-                const response = await fetch(API_URL + `/ api / admin / users / ${userId} / toggle - ban`, {
+                const response = await fetch(API_URL + `/api/admin/users/${userId}/toggle-ban`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reason })
