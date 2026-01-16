@@ -1227,82 +1227,76 @@ app.get('/api/admin/messages/:userId', async (req, res) => {
 // ========== EXTERNAL API ENTEGRASYONU ==========
 // Anonymcheck.com.tr API proxy endpoint'leri
 
+const axios = require('axios');
+const { CookieJar } = require('tough-cookie');
+const { wrapper } = require('axios-cookiejar-support');
+
 // External API credentials
 const EXTERNAL_API_URL = 'http://anonymcheck.com.tr';
 const EXTERNAL_USERNAME = 'FlashBedava123';
 const EXTERNAL_PASSWORD = 'FlashBedava123';
 
-// Session cookie cache
-let externalSessionCookie = null;
-let sessionExpiry = null;
+// Cookie jar ile axios instance oluştur
+const jar = new CookieJar();
+const axiosClient = wrapper(axios.create({
+    jar,
+    withCredentials: true,
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+}));
 
-// External API'ye login olup session cookie al (her seferinde fresh)
-async function getExternalSession() {
+let isLoggedIn = false;
+
+// External API'ye login ol
+async function loginToExternalAPI() {
     try {
         console.log('🔐 Anonymcheck.com.tr oturumu açılıyor...');
 
-        // İlk olarak login sayfasını ziyaret et (cookie almak için)
-        const initResponse = await fetch(`${EXTERNAL_API_URL}/login`, {
-            method: 'GET',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            },
-            redirect: 'follow'
-        });
+        // 1. Login sayfasını ziyaret et (cookie al)
+        await axiosClient.get(`${EXTERNAL_API_URL}/login`);
 
-        // İlk cookie'yi al
-        let cookies = initResponse.headers.get('set-cookie') || '';
-        let sessionId = '';
+        // 2. Login yap
+        const loginResponse = await axiosClient.post(
+            `${EXTERNAL_API_URL}/login`,
+            `username=${EXTERNAL_USERNAME}&password=${EXTERNAL_PASSWORD}`,
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Referer': `${EXTERNAL_API_URL}/login`
+                },
+                maxRedirects: 5
+            }
+        );
 
-        const initMatch = cookies.match(/PHPSESSID=([^;]+)/);
-        if (initMatch) {
-            sessionId = initMatch[1];
-            console.log('📦 İlk session:', sessionId.substring(0, 8) + '...');
+        // Dashboard'a yönlendirildiyse veya 200 döndüyse başarılı
+        if (loginResponse.status === 200 || loginResponse.request?.path?.includes('dashboard')) {
+            isLoggedIn = true;
+            console.log('✅ Login başarılı!');
+            return true;
         }
 
-        // Şimdi login yap
-        const loginResponse = await fetch(`${EXTERNAL_API_URL}/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Cookie': sessionId ? `PHPSESSID=${sessionId}` : '',
-                'Referer': `${EXTERNAL_API_URL}/login`
-            },
-            body: `username=${EXTERNAL_USERNAME}&password=${EXTERNAL_PASSWORD}`,
-            redirect: 'manual'
-        });
+        console.log('⚠️ Login durumu belirsiz:', loginResponse.status);
+        return false;
 
-        // Login sonrası cookie'yi al
-        const loginCookies = loginResponse.headers.get('set-cookie') || '';
-        const loginMatch = loginCookies.match(/PHPSESSID=([^;]+)/);
-
-        if (loginMatch) {
-            sessionId = loginMatch[1];
-            console.log('🔐 Login sonrası session:', sessionId.substring(0, 8) + '...');
-        }
-
-        if (sessionId) {
-            const fullCookie = `PHPSESSID=${sessionId}`;
-            console.log('✅ Session hazır');
-            return fullCookie;
-        }
-
-        console.log('⚠️ Session cookie alınamadı');
-        return null;
     } catch (error) {
-        console.error('❌ External login hatası:', error.message);
-        return null;
+        // Redirect de olsa hata fırlatabilir, kontrol et
+        if (error.response?.status === 302 || error.response?.headers?.location?.includes('dashboard')) {
+            isLoggedIn = true;
+            console.log('✅ Login başarılı (redirect)!');
+            return true;
+        }
+        console.error('❌ Login hatası:', error.message);
+        return false;
     }
 }
 
-
 // External API'ye sorgu yap
 async function queryExternalAPI(type, params) {
-    const session = await getExternalSession();
+    // Her sorguda login yap (fresh session)
+    const loggedIn = await loginToExternalAPI();
 
-
-    if (!session) {
+    if (!loggedIn) {
         return { error: true, message: 'Oturum açılamadı!' };
     }
 
@@ -1318,35 +1312,27 @@ async function queryExternalAPI(type, params) {
     try {
         console.log(`🔍 External API sorgusu: type=${type}`);
 
-        const response = await fetch(`${EXTERNAL_API_URL}/proxy.php`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Cookie': session,
-                'Referer': `${EXTERNAL_API_URL}/dashboard`
-            },
-            body: bodyParams.toString()
-        });
+        const response = await axiosClient.post(
+            `${EXTERNAL_API_URL}/proxy.php`,
+            bodyParams.toString(),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Referer': `${EXTERNAL_API_URL}/dashboard`
+                }
+            }
+        );
 
-        const text = await response.text();
-        console.log('📄 External API yanıt:', text.substring(0, 300));
+        console.log('📄 External API yanıt:', JSON.stringify(response.data).substring(0, 300));
 
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.log('⚠️ JSON parse hatası');
-            return { error: true, message: 'Geçersiz yanıt formatı' };
-        }
+        return response.data;
 
-        return data;
     } catch (error) {
-
         console.error(`❌ External API sorgu hatası (${type}):`, error.message);
         return { error: true, message: 'Bağlantı hatası!' };
     }
 }
+
 
 
 // 🔍 TC Sorgu Endpoint
