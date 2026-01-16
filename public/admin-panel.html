@@ -1098,11 +1098,11 @@
                     if (result.users.length === 0) {
                         document.getElementById('searchResults').innerHTML = '<span style="color: #ef4444;">Sonuç bulunamadı!</span>';
                     } else {
-                        document.getElementById('searchResults').innerHTML = `< span style = "color: #22c55e;" > ${result.users.length} kullanıcı bulundu</span > `;
+                        document.getElementById('searchResults').innerHTML = `<span style="color: #22c55e;">${result.users.length} kullanıcı bulundu</span>`;
 
                         // Tabloyu arama sonuçlarıyla güncelle
                         document.getElementById('usersTableBody').innerHTML = result.users.map((user, index) => `
-                    < tr style = "background: rgba(99, 102, 241, 0.1);" >
+                            <tr style="background: rgba(99, 102, 241, 0.1);">
                                 <td>
                                     <div class="user-info">
                                         <div class="user-avatar">${getInitials(user.username)}</div>
@@ -1139,7 +1139,7 @@
                                         ${user.is_banned ? '✓ Aktif Et' : '🚫 Kısıtla'}
                                     </button>
                                 </td>
-                            </tr >
+                            </tr>
                         `).join('');
                     }
                 }
