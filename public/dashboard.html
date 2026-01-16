@@ -655,22 +655,238 @@
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Responsive */
+        /* Input Grid - responsive */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
         @media (max-width: 768px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 👑 VIP Hoşgeldin Animasyonu */
+        .vip-welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .vip-welcome-overlay.hide {
+            animation: fadeOut 0.5s ease forwards;
+        }
+
+        .vip-crown {
+            font-size: 5rem;
+            animation: crownBounce 1s ease infinite;
+        }
+
+        .vip-welcome-text {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .vip-username {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            margin-top: 10px;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes crownBounce {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            25% {
+                transform: translateY(-15px) rotate(-5deg);
+            }
+
+            50% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            75% {
+                transform: translateY(-15px) rotate(5deg);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        /* Responsive - Mobil Optimizasyon */
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+            }
+
             .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
+                position: fixed;
+                left: -280px;
+                top: 0;
+                width: 280px;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+            }
+
+            .sidebar.open {
+                left: 0;
             }
 
             .main-content {
                 margin-left: 0;
+                width: 100%;
+                min-height: 100vh;
+                padding: 16px;
+            }
+
+            /* Hamburger menü her zaman görünür */
+            .hamburger-btn {
+                display: flex !important;
+                position: fixed;
+                top: 16px;
+                left: 16px;
+                z-index: 1001;
+                background: rgba(30, 41, 59, 0.95);
+                backdrop-filter: blur(10px);
+            }
+
+            /* Overlay for mobile menu */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            /* Query card mobil optimizasyon */
+            .query-card {
+                padding: 16px;
+                margin: 0;
+            }
+
+            /* Grid 2 sütundan 1 sütuna */
+            .query-card>div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Input'lar tam genişlik */
+            .query-input {
+                width: 100%;
+                font-size: 16px;
+                /* iOS zoom önleme */
+            }
+
+            /* Başlıklar */
+            .page-title {
+                font-size: 1.3rem;
+            }
+
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding-top: 50px;
+                /* Hamburger için boşluk */
+            }
+
+            /* Sonuç bölümü */
+            .result-section {
+                padding: 12px;
+            }
+
+            .result-content {
+                font-size: 0.8rem;
+            }
+
+            /* Chat popup mobil */
+            #chatPopup {
+                width: calc(100% - 32px) !important;
+                right: 16px !important;
+                bottom: 80px !important;
+                height: 400px !important;
+            }
+
+            /* Premium section */
+            .premium-section {
+                padding: 12px;
+            }
+        }
+
+        /* Tablet */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
             }
         }
     </style>
 </head>
 
 <body>
+    <!-- 👑 VIP Hoşgeldin Animasyonu -->
+    <div id="vipWelcomeOverlay" class="vip-welcome-overlay" style="display: none;">
+        <div class="vip-crown">👑</div>
+        <div class="vip-welcome-text">Hoş Geldiniz!</div>
+        <div class="vip-username" id="vipWelcomeUsername"></div>
+    </div>
+
     <!-- Hamburger Menu Button -->
     <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()">
         <span></span>
@@ -678,8 +894,11 @@
         <span></span>
     </button>
 
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebarMenu">
         <!-- User Profile -->
         <div class="user-profile">
             <div class="user-avatar" id="userAvatar">?</div>
@@ -936,34 +1155,33 @@
                 <p class="query-description">Ad ve soyad girmek zorunludur.</p>
 
                 <!-- Ad ve Soyad Yan Yana -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="input-grid">
                     <div>
                         <label class="form-label">Ad
                             <span style="color: #94a3b8; font-weight: 400;">(Zorunlu)</span></label>
-                        <input type="text" class="query-input" id="adInput" placeholder="Ad" style="margin-bottom: 0;">
+                        <input type="text" class="query-input" id="adInput" placeholder="Ad">
                     </div>
                     <div>
                         <label class="form-label">Soyad
                             <span style="color: #94a3b8; font-weight: 400;">(Zorunlu)</span></label>
-                        <input type="text" class="query-input" id="soyadInput" placeholder="Soyad"
-                            style="margin-bottom: 0;">
+                        <input type="text" class="query-input" id="soyadInput" placeholder="Soyad">
                     </div>
                 </div>
 
                 <!-- İl ve İlçe Yan Yana -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="input-grid">
                     <div>
                         <label class="form-label">İl
                             <span style="color: #94a3b8; font-weight: 400;">(Opsiyonel)</span></label>
-                        <input type="text" class="query-input" id="ilInput" placeholder="İl" style="margin-bottom: 0;">
+                        <input type="text" class="query-input" id="ilInput" placeholder="İl">
                     </div>
                     <div>
                         <label class="form-label">İlçe
                             <span style="color: #94a3b8; font-weight: 400;">(Opsiyonel)</span></label>
-                        <input type="text" class="query-input" id="ilceInput" placeholder="İlçe"
-                            style="margin-bottom: 0;">
+                        <input type="text" class="query-input" id="ilceInput" placeholder="İlçe">
                     </div>
                 </div>
+
 
                 <button class="query-btn" onclick="executeNameQuery()">🔍 Sorgula</button>
 
@@ -1084,6 +1302,26 @@
                 if (welcomeTitle) {
                     welcomeTitle.innerHTML = '👑 <span style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">VIP Hoş Geldiniz!</span>';
                 }
+
+                // 👑 VIP HOŞGELDİN ANİMASYONU - Sadece ilk girişte
+                const hasSeenWelcome = sessionStorage.getItem('vip_welcome_shown');
+                if (!hasSeenWelcome) {
+                    sessionStorage.setItem('vip_welcome_shown', 'true');
+                    const overlay = document.getElementById('vipWelcomeOverlay');
+                    const usernameEl = document.getElementById('vipWelcomeUsername');
+
+                    usernameEl.textContent = user.username || 'VIP Üye';
+                    overlay.style.display = 'flex';
+
+                    // 3 saniye sonra kapat
+                    setTimeout(() => {
+                        overlay.classList.add('hide');
+                        setTimeout(() => {
+                            overlay.style.display = 'none';
+                            overlay.classList.remove('hide');
+                        }, 500);
+                    }, 3000);
+                }
             } else {
                 typeEl.textContent = '○ Free Üyelik';
                 // Free kullanıcı için de welcome screen göster (VIP ile aynı)
@@ -1137,18 +1375,17 @@
         let currentQueryType = '';
         let currentIsVip = false;
 
-        // ☰ Sidebar Toggle Fonksiyonu
+        // ☰ Sidebar Toggle Fonksiyonu (Mobil Uyumlu)
         function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
+            const sidebar = document.getElementById('sidebarMenu');
+            const overlay = document.getElementById('sidebarOverlay');
             const hamburger = document.getElementById('hamburgerBtn');
-            sidebar.classList.toggle('collapsed');
 
-            // Hamburger buton pozisyonunu güncelle
-            if (sidebar.classList.contains('collapsed')) {
-                hamburger.style.left = '20px'; // Sol üst
-            } else {
-                hamburger.style.left = '225px'; // Sidebar sağ üst köşesi
-            }
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+
+            // Hamburger animasyonu
+            hamburger.classList.toggle('open');
         }
 
         function toggleSubmenu(id) {
