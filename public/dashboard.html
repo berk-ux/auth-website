@@ -908,6 +908,14 @@
                 <button class="query-btn" id="queryBtn" onclick="executeQuery()">🔍 Sorgula</button>
 
                 <div class="result-section" id="resultSection">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="color: #64748b; font-size: 0.8rem;">📋 Sonuç</span>
+                        <button class="copy-btn" onclick="copyQueryResult('resultContent')"
+                            style="padding: 6px 14px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 8px; color: white; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            📋 Kopyala
+                        </button>
+                    </div>
                     <div class="result-content" id="resultContent"></div>
                 </div>
             </div>
@@ -960,6 +968,14 @@
                 <button class="query-btn" onclick="executeNameQuery()">🔍 Sorgula</button>
 
                 <div class="result-section" id="nameResultSection">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="color: #64748b; font-size: 0.8rem;">📋 Sonuç</span>
+                        <button class="copy-btn" onclick="copyQueryResult('nameResultContent')"
+                            style="padding: 6px 14px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 8px; color: white; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            📋 Kopyala
+                        </button>
+                    </div>
                     <div class="result-content" id="nameResultContent"></div>
                 </div>
             </div>
@@ -1092,6 +1108,31 @@
         // İlk heartbeat ve her 30 saniyede bir gönder
         sendHeartbeat();
         setInterval(sendHeartbeat, 30000);
+
+        // 📋 Sorgu Sonucunu Kopyala
+        function copyQueryResult(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const text = element.innerText || element.textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    // Görsel geri bildirim
+                    const copyBtn = element.parentElement.querySelector('.copy-btn');
+                    if (copyBtn) {
+                        const originalText = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '✅ Kopyalandı!';
+                        copyBtn.style.background = '#22c55e';
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalText;
+                            copyBtn.style.background = '';
+                        }, 1500);
+                    }
+                }).catch(err => {
+                    console.error('Kopyalama hatası:', err);
+                    alert('Kopyalama başarısız!');
+                });
+            }
+        }
+
 
         let currentQueryType = '';
         let currentIsVip = false;

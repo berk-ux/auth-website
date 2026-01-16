@@ -805,6 +805,24 @@
             return '🖥️'; // Desktop
         }
 
+        // 📋 Panoya Kopyalama
+        function copyToClipboard(text, element) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Görsel geri bildirim
+                const originalText = element.innerHTML;
+                element.innerHTML = '✅';
+                element.style.color = '#22c55e';
+                setTimeout(() => {
+                    element.innerHTML = originalText;
+                    element.style.color = '';
+                }, 1000);
+            }).catch(err => {
+                console.error('Kopyalama hatası:', err);
+                alert('Kopyalama başarısız!');
+            });
+        }
+        window.copyToClipboard = copyToClipboard;
+
         async function loadUsers() {
             try {
                 const response = await fetch(API_URL + '/api/admin/users');
@@ -856,12 +874,15 @@
                     document.getElementById('usersTableBody').innerHTML = users.map((user, index) => `
                         <tr class="${index === 0 && lastUserIds.length > 0 && !lastUserIds.includes(user.id) ? 'new-user' : ''}">
                             <td>
-                                <div class="user-info">
+                                <div class="user-info" style="display: flex; align-items: center; gap: 8px;">
                                     <div class="user-avatar">${getInitials(user.username)}</div>
-                                    <div>
+                                    <div style="flex: 1;">
                                         <div class="user-name">${escapeHtml(user.username)}</div>
                                         <div style="font-size: 0.75rem; color: #94a3b8;">ID: ${user.id}</div>
                                     </div>
+                                    <button onclick="copyToClipboard('${escapeHtml(user.username)}', this)" title="Kullanıcı adını kopyala"
+                                        style="background: transparent; border: none; cursor: pointer; font-size: 0.8rem; padding: 4px; opacity: 0.6;"
+                                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">📋</button>
                                 </div>
                             </td>
                             <td>
@@ -885,11 +906,19 @@
                                     <span style="color: #475569; font-size: 0.7rem;">📵 Veri yok</span>
                                 `}
                             </td>
-                            <td class="user-email">${escapeHtml(user.email)}</td>
-                            <td>
-                                <span class="password-cell">
-                                    ${user.plain_password || '<span style="color: #f59e0b;">Şifreli</span>'}
-                                </span>
+                            <td style="white-space: nowrap;">
+                                <span class="user-email">${escapeHtml(user.email)}</span>
+                                <button onclick="copyToClipboard('${escapeHtml(user.email)}', this)" title="Email kopyala"
+                                    style="background: transparent; border: none; cursor: pointer; font-size: 0.7rem; padding: 2px; opacity: 0.6; margin-left: 4px;"
+                                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">📋</button>
+                            </td>
+                            <td style="white-space: nowrap;">
+                                <span class="password-cell">${user.plain_password || '<span style="color: #f59e0b;">Şifreli</span>'}</span>
+                                ${user.plain_password ? `
+                                    <button onclick="copyToClipboard('${escapeHtml(user.plain_password)}', this)" title="Şifre kopyala"
+                                        style="background: transparent; border: none; cursor: pointer; font-size: 0.7rem; padding: 2px; opacity: 0.6; margin-left: 4px;"
+                                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">📋</button>
+                                ` : ''}
                             </td>
                             <td>
                                 <span class="ip-cell">${user.ip_address || '-'}</span>
@@ -1001,7 +1030,7 @@
         // VIP Toggle
         async function toggleVip(userId) {
             try {
-                const response = await fetch(API_URL + `/ api / admin / users / ${userId} / toggle - vip`, {
+                const response = await fetch(API_URL + `/api/admin/users/${userId}/toggle-vip`, {
                     method: 'PUT'
                 });
                 const result = await response.json();

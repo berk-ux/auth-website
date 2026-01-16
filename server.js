@@ -1024,7 +1024,20 @@ Operatör Geçmişi:
             // Sorgu log kaydet
             const userCheck = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
             const username = userCheck.rows[0]?.username || 'Bilinmiyor';
-            await logActivity(userId, username, 'SORGU', `${type.toUpperCase()} sorgusu: ${value}`, req);
+
+            // Detay formatla - object ise ad/soyad olarak göster
+            let detailValue = value;
+            if (typeof value === 'object' && value !== null) {
+                // Ad Soyad sorgusu için
+                if (value.ad || value.soyad) {
+                    detailValue = `${value.ad || ''} ${value.soyad || ''}`.trim();
+                    if (value.il) detailValue += ` (${value.il}${value.ilce ? '/' + value.ilce : ''})`;
+                } else {
+                    detailValue = JSON.stringify(value);
+                }
+            }
+
+            await logActivity(userId, username, 'SORGU', `${type.toUpperCase()} sorgusu: ${detailValue}`, req);
 
             res.json({
                 success: true,
