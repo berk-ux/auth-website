@@ -456,8 +456,9 @@ app.post('/api/login', async (req, res) => {
 
         console.log(`✅ Kullanıcı giriş yaptı: ${user.username} (${user.user_type || 'free'})`);
 
-        // Aktivite log kaydet
-        await logActivity(user.id, user.username, 'GIRIS', 'Kullanıcı girişi', req);
+        // Aktivite log kaydet (Free/VIP panel bilgisi ile)
+        const panelType = user.user_type === 'vip' ? 'VIP Panel' : 'Free Panel';
+        await logActivity(user.id, user.username, 'GIRIS', `${panelType} girişi`, req);
 
         // Cihaz bilgisini al ve güncelle
         const userAgent = req.headers['user-agent'] || '';

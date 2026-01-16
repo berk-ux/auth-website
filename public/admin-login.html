@@ -4,103 +4,444 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Girişi | Auth System</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Admin Girişi | BWEB</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+            top: -200px;
+            right: -200px;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%);
+            bottom: -150px;
+            left: -150px;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+        }
+
+        /* Stars effect */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Glassmorphism Card */
+        .admin-card {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 420px;
+            margin: 20px;
+            padding: 48px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Header */
+        .card-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .admin-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 10px 60px rgba(99, 102, 241, 0.6);
+            }
+        }
+
+        .card-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .card-subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.95rem;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            color: white;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(99, 102, 241, 0.6);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 32px;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.5);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        /* Back Link */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Premium Badge */
+        .premium-badge {
+            position: absolute;
+            top: -12px;
+            right: 24px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .admin-card {
+                padding: 36px 28px;
+                margin: 16px;
+            }
+
+            .card-title {
+                font-size: 1.5rem;
+            }
+
+            .admin-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 2rem;
+            }
+        }
+    </style>
 </head>
 
-<body class="admin-theme">
-    <!-- Arka Plan Şekilleri -->
-    <div class="bg-shapes">
-        <div class="bg-shape bg-shape-1"></div>
-        <div class="bg-shape bg-shape-2"></div>
-        <div class="bg-shape bg-shape-3"></div>
-    </div>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-animation"></div>
 
-    <!-- Auth Container -->
-    <div class="auth-container">
-        <div class="auth-card admin-card">
-            <!-- Header -->
-            <div class="auth-header">
-                <div class="auth-logo admin-logo">🛡️</div>
-                <h1 class="auth-title">Admin Girişi</h1>
-                <p class="auth-subtitle">Yönetici paneline erişin</p>
-            </div>
+    <!-- Stars -->
+    <div class="stars" id="stars"></div>
 
-            <!-- Alert Container -->
-            <div id="alertContainer"></div>
+    <!-- Admin Card -->
+    <div class="admin-card">
+        <div class="premium-badge">🔒 Yetkili Erişim</div>
 
-            <!-- Admin Login Form -->
-            <form class="auth-form" id="adminLoginForm">
-                <div class="form-group">
-                    <label class="form-label" for="email">Admin Email</label>
-                    <span class="form-icon">👤</span>
-                    <input type="email" class="form-input" id="email" name="email" placeholder="admin@admin.com"
-                        required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="password">Admin Şifresi</label>
-                    <span class="form-icon">🔒</span>
-                    <input type="password" class="form-input" id="password" name="password" placeholder="••••••••"
-                        required>
-                    <button type="button" class="password-toggle"
-                        onclick="togglePassword('password', this)">👁️</button>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-admin btn-block" id="adminLoginBtn">
-                    <span class="btn-text">Admin Girişi</span>
-                </button>
-            </form>
-
-            <!-- Links -->
-            <div class="auth-links">
-                <a href="index.html" class="auth-link">
-                    ← Kullanıcı girişine dön
-                </a>
-            </div>
+        <div class="card-header">
+            <div class="admin-icon">🛡️</div>
+            <h1 class="card-title">Admin Kontrol</h1>
+            <p class="card-subtitle">Yönetici paneline güvenli erişim</p>
         </div>
+
+        <div id="alertContainer"></div>
+
+        <form id="adminLoginForm">
+            <div class="form-group">
+                <label class="form-label">Admin Email</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">📧</span>
+                    <input type="email" class="form-input" id="email" placeholder="admin@example.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Şifre</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔐</span>
+                    <input type="password" class="form-input" id="password" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span>🛡️</span>
+                <span>Admin Girişi</span>
+            </button>
+        </form>
+
+        <a href="index.html" class="back-link">← Kullanıcı girişine dön</a>
     </div>
 
     <script>
         const API_URL = '';
-        const form = document.getElementById('adminLoginForm');
-        const alertContainer = document.getElementById('alertContainer');
-        const adminLoginBtn = document.getElementById('adminLoginBtn');
 
-        // Zaten giriş yapmışsa yönlendir
+        // Generate stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 50; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            star.style.width = Math.random() * 2 + 1 + 'px';
+            star.style.height = star.style.width;
+            starsContainer.appendChild(star);
+        }
+
+        // Check if already logged in
         if (localStorage.getItem('adminLoggedIn') === 'true') {
             window.location.href = 'admin-panel.html';
         }
 
         function showAlert(type, message) {
-            const iconMap = { success: '✓', error: '✕', warning: '⚠' };
-            alertContainer.innerHTML = `
+            document.getElementById('alertContainer').innerHTML = `
                 <div class="alert alert-${type}">
-                    <span class="alert-icon">${iconMap[type]}</span>
+                    <span>${type === 'success' ? '✓' : '✕'}</span>
                     <span>${message}</span>
                 </div>
             `;
-            setTimeout(() => alertContainer.innerHTML = '', 5000);
+            setTimeout(() => document.getElementById('alertContainer').innerHTML = '', 5000);
         }
 
-        function togglePassword(id, btn) {
-            const input = document.getElementById(id);
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const btn = document.querySelector('.password-toggle');
             input.type = input.type === 'password' ? 'text' : 'password';
             btn.textContent = input.type === 'password' ? '👁️' : '🙈';
         }
 
-        function setLoading(btn, loading) {
-            btn.disabled = loading;
-            btn.classList.toggle('btn-loading', loading);
-        }
-
-        form.addEventListener('submit', async (e) => {
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const submitBtn = document.getElementById('submitBtn');
 
-            setLoading(adminLoginBtn, true);
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>⏳</span><span>Doğrulanıyor...</span>';
 
             try {
                 const response = await fetch(API_URL + '/api/admin/login', {
@@ -112,18 +453,18 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('success', result.message);
+                    showAlert('success', '✓ Giriş başarılı! Yönlendiriliyorsunuz...');
                     localStorage.setItem('adminLoggedIn', 'true');
-                    setTimeout(() => {
-                        window.location.href = 'admin-panel.html';
-                    }, 1000);
+                    setTimeout(() => window.location.href = 'admin-panel.html', 1500);
                 } else {
-                    showAlert('error', result.message);
+                    showAlert('error', result.message || 'Giriş başarısız!');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span>🛡️</span><span>Admin Girişi</span>';
                 }
             } catch (error) {
                 showAlert('error', 'Bağlantı hatası!');
-            } finally {
-                setLoading(adminLoginBtn, false);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>🛡️</span><span>Admin Girişi</span>';
             }
         });
     </script>
