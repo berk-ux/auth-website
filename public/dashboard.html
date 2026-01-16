@@ -966,7 +966,7 @@
 
         <!-- Menu -->
         <nav class="menu-section">
-            <div class="menu-item" onclick="showWelcome()">
+            <div class="menu-item" onclick="goToHome()">
                 <span class="menu-icon">🏠</span>
                 Ana Sayfa
             </div>
@@ -1073,6 +1073,30 @@
             🚪 Çıkış Yap
         </button>
     </aside>
+
+    <!-- Sağ Üst Çıkış Butonu -->
+    <button onclick="logout()" style="
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        transition: transform 0.2s, box-shadow 0.2s;
+    " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.4)';"
+        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(239, 68, 68, 0.3)';">
+        🚪 Çıkış
+    </button>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -1516,6 +1540,13 @@
 
             submenu.classList.toggle('open');
             menuItem.classList.toggle('open');
+        }
+
+        // 🏠 Ana Sayfa butonu
+        function goToHome() {
+            // 📱 Mobilde sidebar'ı kapat
+            closeSidebarOnMobile();
+            showWelcome();
         }
 
         function showWelcome() {

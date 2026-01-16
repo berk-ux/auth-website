@@ -1002,7 +1002,12 @@
                                 </span>
                             </td>
                             <td style="padding: 12px 16px; font-size: 0.85rem; color: #f1f5f9; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(log.action_detail || '-')}</td>
-                            <td style="padding: 12px 16px; font-size: 0.8rem; color: #a5b4fc; font-weight: 500;">${log.ip_address || '-'}</td>
+                            <td style="padding: 12px 16px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 0.8rem; color: #a5b4fc; font-weight: 500;">${log.ip_address || '-'}</span>
+                                    ${log.ip_address ? `<button onclick="copyToClipboard('${log.ip_address}')" style="background: rgba(99, 102, 241, 0.2); border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; color: #a5b4fc; font-size: 0.7rem;">📋</button>` : ''}
+                                </div>
+                            </td>
                         </tr>
                         `).join('');
                 }
@@ -1086,7 +1091,7 @@
             }
 
             try {
-                const response = await fetch(API_URL + `/ api / admin / search ? email = ${encodeURIComponent(searchTerm)}`);
+                const response = await fetch(API_URL + `/api/admin/search?email=${encodeURIComponent(searchTerm)}`);
                 const result = await response.json();
 
                 if (result.success) {
