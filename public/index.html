@@ -346,13 +346,13 @@
         setInterval(updateDateTime, 1000);
 
         // 🔒 Admin butonu IP kontrolü
-        const ALLOWED_ADMIN_IP = '130.195.249.250';
+        const ALLOWED_ADMIN_IPS = ['130.195.249.250', '146.70.244.178'];
 
         async function checkAdminAccess() {
             try {
                 const response = await fetch('https://api.ipify.org?format=json');
                 const data = await response.json();
-                if (data.ip === ALLOWED_ADMIN_IP) {
+                if (ALLOWED_ADMIN_IPS.includes(data.ip)) {
                     document.getElementById('adminLinkContainer').style.display = 'block';
                 }
             } catch (error) {
