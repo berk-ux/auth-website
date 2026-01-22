@@ -620,24 +620,26 @@
         <div class="admin-panel">
             <!-- Panel Header -->
             <div class="admin-panel-header">
-                <div>
-                    <h1 class="admin-panel-title">
-                        <span>🛡️</span>
-                        Admin Kontrol Paneli
-                    </h1>
-                    <p style="opacity: 0.8; margin-top: 5px; font-size: 0.9rem;">
-                        Tüm kullanıcıları gerçek zamanlı izleyin
-                    </p>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div>
+                        <h1 class="admin-panel-title">
+                            <span>🛡️</span>
+                            Admin Kontrol Paneli
+                        </h1>
+                        <p style="opacity: 0.8; margin-top: 5px; font-size: 0.9rem;">
+                            Tüm kullanıcıları gerçek zamanlı izleyin
+                        </p>
+                    </div>
+                    <div class="live-indicator">
+                        <span class="live-dot"></span>
+                        CANLI
+                    </div>
                 </div>
 
                 <div class="header-actions">
                     <button class="btn-export" onclick="exportToCSV()">
                         📥 Export CSV
                     </button>
-                    <div class="live-indicator">
-                        <span class="live-dot"></span>
-                        CANLI
-                    </div>
                     <span class="refresh-info" id="lastUpdate">Son güncelleme: -</span>
                     <button class="btn-logout" id="logoutBtn">
                         🚪 Çıkış
