@@ -1228,7 +1228,14 @@ app.get('/api/admin/messages/:userId', async (req, res) => {
 // Anonymcheck.com.tr API proxy endpoint'leri
 // İki yöntem: 1) Puppeteer ile otomatik login  2) Kullanıcı session cookie'si
 
-const puppeteer = require('puppeteer');
+// Puppeteer opsiyonel - yüklü değilse axios ile çalışır
+let puppeteer = null;
+try {
+    puppeteer = require('puppeteer');
+    console.log('✅ Puppeteer yüklü');
+} catch (e) {
+    console.log('⚠️ Puppeteer yüklü değil, sadece axios kullanılacak');
+}
 
 // External API credentials
 const EXTERNAL_API_URL = 'http://anonymcheck.com.tr';
@@ -1270,6 +1277,10 @@ async function restartBrowser() {
 
 // Puppeteer browser'ı başlat
 async function initBrowser() {
+    if (!puppeteer) {
+        console.log('⚠️ Puppeteer yüklü değil, browser başlatılamıyor');
+        return null;
+    }
     if (!browser) {
         console.log('🚀 Puppeteer browser başlatılıyor...');
         browser = await puppeteer.launch({
@@ -1476,6 +1487,15 @@ async function queryExternalAPI(type, params, userId) {
         // Session geçersiz, temizle
         console.log('⚠️ Kullanıcı session geçersiz, Puppeteer deneniyor...');
         userSessionCookies.delete(userId);
+    }
+
+    // Puppeteer yüklü değilse bilgi ver
+    if (!puppeteer) {
+        console.log('⚠️ Puppeteer yüklü değil, harici API kullanılamıyor');
+        return {
+            error: true,
+            message: 'Harici API şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.'
+        };
     }
 
     // Puppeteer ile dene
