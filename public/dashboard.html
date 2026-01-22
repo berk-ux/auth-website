@@ -1061,7 +1061,17 @@
             </div>
         </nav>
 
+        <!-- Ayarlar Menüsü -->
+        <nav class="menu-section">
+            <div class="menu-title">AYARLAR</div>
+            <div class="menu-item" onclick="showSessionSettings()">
+                <span class="menu-icon">🔐</span>
+                Session Ayarları
+            </div>
+        </nav>
+
         <!-- Premium CTA -->
+
         <div class="premium-section" id="premiumCTA">
             <div class="premium-title">👑 PREMİUM ÇÖZÜMLER</div>
             <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 12px;">Tüm özelliklere erişim için VIP olun</p>
@@ -1138,7 +1148,59 @@
             </div>
         </div>
 
+        <!-- Session Settings Screen -->
+        <div id="sessionSettingsScreen" style="display: none;">
+            <div class="content-header">
+                <h1 class="page-title">🔐 Session Ayarları</h1>
+                <span class="header-badge">AYARLAR</span>
+            </div>
+
+            <div class="query-card" style="max-width: 700px;">
+                <h2 class="query-title">
+                    <span>🍪</span>
+                    <span>External API Session Cookie</span>
+                </h2>
+                <p class="query-description">
+                    Anonymcheck.com.tr sitesinden aldığınız PHPSESSID cookie değerini buraya girin.
+                    Bu sayede kendi oturumunuzla sorgu yapabilirsiniz.
+                </p>
+
+                <div
+                    style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                    <h4 style="color: #60a5fa; margin-bottom: 10px;">📋 Session Cookie Nasıl Alınır?</h4>
+                    <ol style="color: #94a3b8; font-size: 0.85rem; padding-left: 20px; line-height: 1.8;">
+                        <li><a href="http://anonymcheck.com.tr/login" target="_blank"
+                                style="color: #60a5fa;">anonymcheck.com.tr</a>'ye giriş yapın</li>
+                        <li>Tarayıcınızda <strong>F12</strong> tuşuna basın (Developer Tools)</li>
+                        <li><strong>Application</strong> → <strong>Cookies</strong> →
+                            <strong>anonymcheck.com.tr</strong>
+                        </li>
+                        <li><strong>PHPSESSID</strong> değerini kopyalayın</li>
+                        <li>Aşağıdaki alana yapıştırın</li>
+                    </ol>
+                </div>
+
+                <label class="form-label">PHPSESSID Cookie Değeri</label>
+                <input type="text" class="query-input" id="sessionCookieInput" placeholder="Örn: abc123def456...">
+
+                <button class="query-btn" onclick="saveSessionCookie()" style="margin-bottom: 16px;">
+                    💾 Session Cookie Kaydet
+                </button>
+
+                <div id="sessionStatus" style="padding: 12px; border-radius: 8px; margin-top: 10px; display: none;">
+                </div>
+
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <p style="color: #64748b; font-size: 0.8rem;">
+                        ⚠️ <strong>Not:</strong> Session cookie'ler belirli bir süre sonra geçersiz olur.
+                        Eğer "oturum süresi doldu" hatası alırsanız yeni cookie alıp tekrar girin.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Query Screen -->
+
         <div id="queryScreen" style="display: none;">
             <div class="content-header">
                 <h1 class="page-title" id="pageTitle">Sorgu</h1>
@@ -1555,7 +1617,70 @@
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('nameQueryScreen').style.display = 'none';
             document.getElementById('userProfileScreen').style.display = 'none';
+            document.getElementById('sessionSettingsScreen').style.display = 'none';
         }
+
+        // 🔐 SESSION AYARLARI SCREEN
+        function showSessionSettings() {
+            // 📱 Mobilde sidebar'ı kapat
+            closeSidebarOnMobile();
+
+            document.getElementById('freeUserScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('queryScreen').style.display = 'none';
+            document.getElementById('nameQueryScreen').style.display = 'none';
+            document.getElementById('userProfileScreen').style.display = 'none';
+            document.getElementById('sessionSettingsScreen').style.display = 'block';
+        }
+
+        // 💾 Session Cookie Kaydet
+        async function saveSessionCookie() {
+            const sessionCookie = document.getElementById('sessionCookieInput').value.trim();
+            const statusDiv = document.getElementById('sessionStatus');
+
+            if (!sessionCookie) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                statusDiv.innerHTML = '<span style="color: #f87171;">❌ Lütfen session cookie değerini girin!</span>';
+                return;
+            }
+
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
+            try {
+                const response = await fetch('/api/external/set-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionCookie: sessionCookie,
+                        userId: userData.id
+                    })
+                });
+
+                const result = await response.json();
+
+                statusDiv.style.display = 'block';
+                if (result.success) {
+                    statusDiv.style.background = 'rgba(34, 197, 94, 0.2)';
+                    statusDiv.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+                    statusDiv.innerHTML = '<span style="color: #22c55e;">✅ Session cookie başarıyla kaydedildi!</span>';
+
+                    // LocalStorage'a da kaydet
+                    localStorage.setItem('externalSessionCookie', sessionCookie);
+                } else {
+                    statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                    statusDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                    statusDiv.innerHTML = `<span style="color: #f87171;">❌ Hata: ${result.message}</span>`;
+                }
+            } catch (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                statusDiv.innerHTML = '<span style="color: #f87171;">❌ Bağlantı hatası!</span>';
+            }
+        }
+
 
         // 👤 KULLANICI HAKKINDA SCREEN
         async function showUserProfile() {
@@ -1566,6 +1691,7 @@
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('nameQueryScreen').style.display = 'none';
+            document.getElementById('sessionSettingsScreen').style.display = 'none';
             document.getElementById('userProfileScreen').style.display = 'block';
 
             // Kullanıcı bilgilerini localStorage'dan al
@@ -1646,6 +1772,7 @@
             document.getElementById('queryScreen').style.display = 'none';
             document.getElementById('nameQueryScreen').style.display = 'block';
             document.getElementById('userProfileScreen').style.display = 'none';
+            document.getElementById('sessionSettingsScreen').style.display = 'none';
 
             // Inputları temizle
             document.getElementById('adInput').value = '';
@@ -1752,6 +1879,7 @@
             document.getElementById('queryScreen').style.display = 'block';
             document.getElementById('nameQueryScreen').style.display = 'none';
             document.getElementById('userProfileScreen').style.display = 'none';
+            document.getElementById('sessionSettingsScreen').style.display = 'none';
 
             document.getElementById('pageTitle').textContent = name;
             document.getElementById('queryName').textContent = name;
@@ -1853,20 +1981,55 @@
                 return;
             }
 
-            document.getElementById('resultContent').innerHTML = '⏳ Sorgulanıyor...';
+            document.getElementById('resultContent').innerHTML = '⏳ Sorgulanıyor... Harici API\'ye bağlanılıyor...';
+            document.getElementById('resultContent').style.color = '#fbbf24';
             document.getElementById('resultSection').classList.add('show');
 
             try {
-                let endpoint = '/api/query';
-                let body = { type: currentQueryType, value, userId: user.id };
+                // Tüm sorguları external API'ye yönlendir
+                let endpoint = '';
+                let body = { userId: user.id };
 
-                // TC ve Aile sorguları için external API kullan
-                if (currentQueryType === 'tc') {
-                    endpoint = '/api/external/tc';
-                    body = { tc: value, userId: user.id };
-                } else if (currentQueryType === 'family') {
-                    endpoint = '/api/external/aile';
-                    body = { tc: value, userId: user.id };
+                switch (currentQueryType) {
+                    case 'tc':
+                        endpoint = '/api/external/tc';
+                        body.tc = value;
+                        break;
+                    case 'family':
+                        endpoint = '/api/external/aile';
+                        body.tc = value;
+                        break;
+                    case 'gsm':
+                        endpoint = '/api/external/gsm';
+                        body.gsm = value;
+                        break;
+                    case 'tcgsm':
+                        endpoint = '/api/external/tcgsm';
+                        body.tc = value;
+                        break;
+                    case 'address':
+                        endpoint = '/api/external/adres';
+                        body.tc = value;
+                        break;
+                    case 'name':
+                        endpoint = '/api/external/adsoyad';
+                        // Ad soyad için özel form varsa onu kullan
+                        const adInput = document.getElementById('adInput');
+                        const soyadInput = document.getElementById('soyadInput');
+                        if (adInput && soyadInput) {
+                            body.ad = adInput.value;
+                            body.soyad = soyadInput.value;
+                        } else {
+                            // Tek input'tan ad soyad ayır
+                            const parts = value.trim().split(' ');
+                            body.ad = parts[0] || '';
+                            body.soyad = parts.slice(1).join(' ') || '';
+                        }
+                        break;
+                    default:
+                        // Bilinmeyen sorgu tipi için demo endpoint kullan
+                        endpoint = '/api/query';
+                        body = { type: currentQueryType, value, userId: user.id };
                 }
 
                 const response = await fetch(endpoint, {

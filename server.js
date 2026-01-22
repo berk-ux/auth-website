@@ -1226,112 +1226,289 @@ app.get('/api/admin/messages/:userId', async (req, res) => {
 
 // ========== EXTERNAL API ENTEGRASYONU ==========
 // Anonymcheck.com.tr API proxy endpoint'leri
+// İki yöntem: 1) Puppeteer ile otomatik login  2) Kullanıcı session cookie'si
 
-const axios = require('axios');
-const { CookieJar } = require('tough-cookie');
-const { wrapper } = require('axios-cookiejar-support');
+const puppeteer = require('puppeteer');
 
 // External API credentials
 const EXTERNAL_API_URL = 'http://anonymcheck.com.tr';
 const EXTERNAL_USERNAME = 'FlashBedava123';
 const EXTERNAL_PASSWORD = 'FlashBedava123';
 
-// Cookie jar ile axios instance oluştur
-const jar = new CookieJar();
-const axiosClient = wrapper(axios.create({
-    jar,
-    withCredentials: true,
-    headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-}));
+// Browser instance (reusable)
+let browser = null;
+let page = null;
+let lastLoginTime = null;
+const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 dakika (daha sık refresh)
 
-let isLoggedIn = false;
+// Retry ayarları
+const MAX_RETRY_ATTEMPTS = 3;
+let currentRetryCount = 0;
 
-// External API'ye login ol
-async function loginToExternalAPI() {
+// Kullanıcıların manuel girdiği session cookie'leri
+const userSessionCookies = new Map();
+
+// Browser'ı yeniden başlat (crash veya session hatalarında)
+async function restartBrowser() {
+    console.log('🔄 Browser yeniden başlatılıyor...');
     try {
-        console.log('🔐 Anonymcheck.com.tr oturumu açılıyor...');
+        if (page) {
+            await page.close().catch(() => { });
+        }
+        if (browser) {
+            await browser.close().catch(() => { });
+        }
+    } catch (e) {
+        console.log('Browser kapatma hatası (normal):', e.message);
+    }
+    browser = null;
+    page = null;
+    lastLoginTime = null;
+    currentRetryCount = 0;
+    console.log('✅ Browser sıfırlandı');
+}
 
-        // 1. Login sayfasını ziyaret et (cookie al)
-        await axiosClient.get(`${EXTERNAL_API_URL}/login`);
+// Puppeteer browser'ı başlat
+async function initBrowser() {
+    if (!browser) {
+        console.log('🚀 Puppeteer browser başlatılıyor...');
+        browser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu',
+                '--window-size=1920x1080'
+            ]
+        });
+        console.log('✅ Browser başlatıldı');
+    }
+    return browser;
+}
 
-        // 2. Login yap
-        const loginResponse = await axiosClient.post(
-            `${EXTERNAL_API_URL}/login`,
-            `username=${EXTERNAL_USERNAME}&password=${EXTERNAL_PASSWORD}`,
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Referer': `${EXTERNAL_API_URL}/login`
-                },
-                maxRedirects: 5
-            }
-        );
-
-        // Dashboard'a yönlendirildiyse veya 200 döndüyse başarılı
-        if (loginResponse.status === 200 || loginResponse.request?.path?.includes('dashboard')) {
-            isLoggedIn = true;
-            console.log('✅ Login başarılı!');
+// Puppeteer ile login ol
+async function loginWithPuppeteer() {
+    try {
+        // Session hala geçerli mi kontrol et
+        if (page && lastLoginTime && (Date.now() - lastLoginTime) < SESSION_TIMEOUT) {
+            console.log('📦 Mevcut session kullanılıyor...');
             return true;
         }
 
-        console.log('⚠️ Login durumu belirsiz:', loginResponse.status);
+        console.log('🔐 Puppeteer ile login yapılıyor...');
+
+        await initBrowser();
+
+        // Yeni sayfa veya mevcut sayfayı temizle
+        if (page) {
+            await page.close();
+        }
+        page = await browser.newPage();
+
+        // User agent ayarla
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+        // Login sayfasına git
+        await page.goto(`${EXTERNAL_API_URL}/login`, { waitUntil: 'networkidle2' });
+
+        // Form doldur
+        await page.type('input[name="username"]', EXTERNAL_USERNAME);
+        await page.type('input[name="password"]', EXTERNAL_PASSWORD);
+
+        // Login butonuna tıkla
+        await Promise.all([
+            page.waitForNavigation({ waitUntil: 'networkidle2' }),
+            page.click('button[type="submit"], input[type="submit"]')
+        ]);
+
+        // Dashboard'a yönlendirildi mi kontrol et
+        const currentUrl = page.url();
+        if (currentUrl.includes('dashboard') || !currentUrl.includes('login')) {
+            lastLoginTime = Date.now();
+            console.log('✅ Puppeteer login başarılı!');
+            return true;
+        }
+
+        console.log('⚠️ Login başarısız, URL:', currentUrl);
         return false;
 
     } catch (error) {
-        // Redirect de olsa hata fırlatabilir, kontrol et
-        if (error.response?.status === 302 || error.response?.headers?.location?.includes('dashboard')) {
-            isLoggedIn = true;
-            console.log('✅ Login başarılı (redirect)!');
-            return true;
-        }
-        console.error('❌ Login hatası:', error.message);
+        console.error('❌ Puppeteer login hatası:', error.message);
         return false;
     }
 }
 
-// External API'ye sorgu yap
-async function queryExternalAPI(type, params) {
-    // Her sorguda login yap (fresh session)
-    const loggedIn = await loginToExternalAPI();
-
-    if (!loggedIn) {
-        return { error: true, message: 'Oturum açılamadı!' };
-    }
-
-    // URL encoded body oluştur
-    const bodyParams = new URLSearchParams();
-    bodyParams.append('type', type);
-
-    // Parametreleri ekle
-    for (const [key, value] of Object.entries(params)) {
-        if (value) bodyParams.append(key, value);
-    }
-
+// Puppeteer ile sorgu yap (retry mekanizmalı)
+async function queryWithPuppeteer(type, params, retryAttempt = 0) {
     try {
-        console.log(`🔍 External API sorgusu: type=${type}`);
+        const loggedIn = await loginWithPuppeteer();
+        if (!loggedIn) {
+            // Retry mekanizması
+            if (retryAttempt < MAX_RETRY_ATTEMPTS) {
+                console.log(`⚠️ Login başarısız, retry ${retryAttempt + 1}/${MAX_RETRY_ATTEMPTS}...`);
+                await restartBrowser();
+                await new Promise(r => setTimeout(r, 2000)); // 2 saniye bekle
+                return await queryWithPuppeteer(type, params, retryAttempt + 1);
+            }
+            return { error: true, message: 'Oturum açılamadı! Lütfen daha sonra tekrar deneyin.' };
+        }
 
-        const response = await axiosClient.post(
-            `${EXTERNAL_API_URL}/proxy.php`,
-            bodyParams.toString(),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Referer': `${EXTERNAL_API_URL}/dashboard`
+        console.log(`🔍 Puppeteer ile sorgu: type=${type}`);
+
+        // Sorgu sayfasına git ve form doldur
+        const formData = new URLSearchParams();
+        formData.append('type', type);
+        for (const [key, value] of Object.entries(params)) {
+            if (value) formData.append(key, value);
+        }
+
+        // proxy.php'ye POST isteği yap (timeout ile)
+        const response = await Promise.race([
+            page.evaluate(async (url, data) => {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: data,
+                    credentials: 'include'
+                });
+                return await res.text();
+            }, `${EXTERNAL_API_URL}/proxy.php`, formData.toString()),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000))
+        ]);
+
+        console.log('📄 Puppeteer yanıt:', response.substring(0, 300));
+
+        // Başarı - retry sayacını sıfırla
+        currentRetryCount = 0;
+
+        try {
+            const jsonResult = JSON.parse(response);
+            return jsonResult;
+        } catch (e) {
+            // Session hatası varsa yeniden dene
+            if (response.includes('oturum') || response.includes('giriş') || response.includes('login')) {
+                if (retryAttempt < MAX_RETRY_ATTEMPTS) {
+                    console.log(`⚠️ Session hatası, retry ${retryAttempt + 1}/${MAX_RETRY_ATTEMPTS}...`);
+                    lastLoginTime = null;
+                    await new Promise(r => setTimeout(r, 1000));
+                    return await queryWithPuppeteer(type, params, retryAttempt + 1);
                 }
             }
-        );
-
-        console.log('📄 External API yanıt:', JSON.stringify(response.data).substring(0, 300));
-
-        return response.data;
+            // HTML yanıt gelmiş olabilir, text olarak döndür
+            if (response.includes('<') && response.includes('>')) {
+                return { error: true, message: 'Beklenmeyen yanıt formatı. Site erişilemez olabilir.' };
+            }
+            return { error: true, message: 'Geçersiz yanıt formatı', rawResponse: response.substring(0, 200) };
+        }
 
     } catch (error) {
-        console.error(`❌ External API sorgu hatası (${type}):`, error.message);
+        console.error(`❌ Puppeteer sorgu hatası (${type}):`, error.message);
+
+        // Timeout veya crash durumunda browser'ı yeniden başlat
+        if (error.message.includes('Timeout') || error.message.includes('Target closed') || error.message.includes('Session closed')) {
+            if (retryAttempt < MAX_RETRY_ATTEMPTS) {
+                console.log(`⚠️ Browser hatası, restart ve retry ${retryAttempt + 1}/${MAX_RETRY_ATTEMPTS}...`);
+                await restartBrowser();
+                await new Promise(r => setTimeout(r, 2000));
+                return await queryWithPuppeteer(type, params, retryAttempt + 1);
+            }
+        }
+
+        return { error: true, message: 'Bağlantı hatası! Lütfen tekrar deneyin.' };
+    }
+}
+
+// Kullanıcı session cookie'si ile sorgu yap
+async function queryWithUserSession(sessionCookie, type, params) {
+    try {
+        console.log(`🔍 Kullanıcı session ile sorgu: type=${type}`);
+
+        const formData = new URLSearchParams();
+        formData.append('type', type);
+        for (const [key, value] of Object.entries(params)) {
+            if (value) formData.append(key, value);
+        }
+
+        const response = await fetch(`${EXTERNAL_API_URL}/proxy.php`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie': `PHPSESSID=${sessionCookie}`,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            },
+            body: formData.toString()
+        });
+
+        const text = await response.text();
+        console.log('📄 User session yanıt:', text.substring(0, 300));
+
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            if (text.includes('oturum') || text.includes('giriş')) {
+                return { error: true, message: 'Session süresi dolmuş, lütfen yeni session girin!' };
+            }
+            return { error: true, message: 'Geçersiz yanıt formatı' };
+        }
+
+    } catch (error) {
+        console.error(`❌ User session sorgu hatası (${type}):`, error.message);
         return { error: true, message: 'Bağlantı hatası!' };
     }
 }
+
+// Ana sorgu fonksiyonu - önce user session, yoksa puppeteer dene
+async function queryExternalAPI(type, params, userId) {
+    // Kullanıcının kayıtlı session cookie'si var mı?
+    const userSession = userSessionCookies.get(userId);
+
+    if (userSession) {
+        console.log(`📦 Kullanıcı #${userId} session cookie'si kullanılıyor...`);
+        const result = await queryWithUserSession(userSession, type, params);
+
+        // Session geçerliyse sonucu döndür
+        if (!result.error || !result.message?.includes('Session')) {
+            return result;
+        }
+
+        // Session geçersiz, temizle
+        console.log('⚠️ Kullanıcı session geçersiz, Puppeteer deneniyor...');
+        userSessionCookies.delete(userId);
+    }
+
+    // Puppeteer ile dene
+    return await queryWithPuppeteer(type, params);
+}
+
+// Kullanıcı session cookie kaydetme endpoint'i
+app.post('/api/external/set-session', async (req, res) => {
+    try {
+        const { sessionCookie, userId } = req.body;
+
+        if (!sessionCookie || !userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Session cookie ve userId gerekli!'
+            });
+        }
+
+        userSessionCookies.set(userId, sessionCookie);
+
+        res.json({
+            success: true,
+            message: 'Session cookie kaydedildi!'
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Session kaydetme hatası!'
+        });
+    }
+});
+
 
 
 
@@ -1349,7 +1526,7 @@ app.post('/api/external/tc', async (req, res) => {
 
         console.log(`🔍 TC Sorgu: ${tc.substring(0, 3)}*****${tc.substring(8)}`);
 
-        const result = await queryExternalAPI('tc', { value: tc });
+        const result = await queryExternalAPI('tc', { value: tc }, userId);
 
         // Aktivite log kaydet
         if (userId) {
@@ -1385,7 +1562,7 @@ app.post('/api/external/adsoyad', async (req, res) => {
 
         console.log(`🔍 Ad Soyad Sorgu: ${ad} ${soyad}`);
 
-        const result = await queryExternalAPI('adsoyad', { ad, soyad, il, ilce, yil });
+        const result = await queryExternalAPI('adsoyad', { ad, soyad, il, ilce, yil }, userId);
 
         // Aktivite log kaydet
         if (userId) {
@@ -1421,7 +1598,7 @@ app.post('/api/external/aile', async (req, res) => {
 
         console.log(`🔍 Aile Sorgu: ${tc.substring(0, 3)}*****${tc.substring(8)}`);
 
-        const result = await queryExternalAPI('aile', { value: tc });
+        const result = await queryExternalAPI('aile', { value: tc }, userId);
 
         // Aktivite log kaydet
         if (userId) {
@@ -1439,6 +1616,114 @@ app.post('/api/external/aile', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Aile sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 GSM → TC Sorgu Endpoint
+app.post('/api/external/gsm', async (req, res) => {
+    try {
+        const { gsm, userId } = req.body;
+
+        if (!gsm || gsm.length < 10) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir GSM numarası girin!'
+            });
+        }
+
+        console.log(`🔍 GSM Sorgu: ${gsm.substring(0, 4)}****${gsm.slice(-2)}`);
+
+        const result = await queryExternalAPI('gsm', { value: gsm }, userId);
+
+        // Aktivite log kaydet
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'GSM_SORGU', `GSM sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message || 'Sonuç bulunamadı!' });
+        }
+
+        res.json({ success: true, data: result.data || result });
+
+    } catch (error) {
+        console.error('❌ GSM sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 TC → GSM Sorgu Endpoint
+app.post('/api/external/tcgsm', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin (11 hane)!'
+            });
+        }
+
+        console.log(`🔍 TC→GSM Sorgu: ${tc.substring(0, 3)}*****${tc.substring(8)}`);
+
+        const result = await queryExternalAPI('tcgsm', { value: tc }, userId);
+
+        // Aktivite log kaydet
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'TCGSM_SORGU', `TC→GSM sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message || 'Sonuç bulunamadı!' });
+        }
+
+        res.json({ success: true, data: result.data || result });
+
+    } catch (error) {
+        console.error('❌ TC→GSM sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Adres Sorgu Endpoint
+app.post('/api/external/adres', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin (11 hane)!'
+            });
+        }
+
+        console.log(`🔍 Adres Sorgu: ${tc.substring(0, 3)}*****${tc.substring(8)}`);
+
+        const result = await queryExternalAPI('adres', { value: tc }, userId);
+
+        // Aktivite log kaydet
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'ADRES_SORGU', `Adres sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message || 'Sonuç bulunamadı!' });
+        }
+
+        res.json({ success: true, data: result.data || result });
+
+    } catch (error) {
+        console.error('❌ Adres sorgu hatası:', error);
         res.status(500).json({ success: false, message: 'Sunucu hatası!' });
     }
 });
