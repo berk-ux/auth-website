@@ -621,9 +621,10 @@
             <!-- Panel Header -->
             <div class="admin-panel-header">
                 <div style="display: flex; align-items: center; gap: 20px;">
-                    <button class="btn-logout" id="logoutBtn">
-                        🚪 Çıkış
-                    </button>
+                    <div class="live-indicator">
+                        <span class="live-dot"></span>
+                        CANLI
+                    </div>
                     <div>
                         <h1 class="admin-panel-title">
                             <span>🛡️</span>
@@ -633,10 +634,9 @@
                             Tüm kullanıcıları gerçek zamanlı izleyin
                         </p>
                     </div>
-                    <div class="live-indicator">
-                        <span class="live-dot"></span>
-                        CANLI
-                    </div>
+                    <button class="btn-logout" id="logoutBtn">
+                        🚪 Çıkış
+                    </button>
                 </div>
 
                 <div class="header-actions">
