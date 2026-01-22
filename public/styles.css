@@ -678,3 +678,483 @@ body {
     background-size: 1000px 100%;
     animation: shimmer 2s infinite;
 }
+
+/* ===== PARTICLE ANIMATION ===== */
+.particles-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: particleFloat 15s infinite linear;
+}
+
+.particle:nth-child(odd) {
+    background: rgba(139, 92, 246, 0.4);
+}
+
+.particle:nth-child(even) {
+    background: rgba(244, 114, 182, 0.4);
+}
+
+@keyframes particleFloat {
+    0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* ===== NEON GLOW EFFECTS ===== */
+.neon-glow {
+    box-shadow: 
+        0 0 5px var(--primary),
+        0 0 10px var(--primary),
+        0 0 20px var(--primary),
+        0 0 40px var(--primary);
+}
+
+.neon-text {
+    text-shadow: 
+        0 0 5px var(--primary),
+        0 0 10px var(--primary),
+        0 0 20px var(--primary);
+}
+
+.neon-border {
+    border: 2px solid var(--primary);
+    box-shadow: 
+        0 0 5px var(--primary),
+        0 0 10px var(--primary),
+        inset 0 0 5px var(--primary);
+}
+
+@keyframes neonPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 5px var(--primary),
+            0 0 10px var(--primary),
+            0 0 20px var(--primary);
+    }
+    50% {
+        box-shadow: 
+            0 0 10px var(--primary),
+            0 0 20px var(--primary),
+            0 0 40px var(--primary),
+            0 0 80px var(--primary);
+    }
+}
+
+.neon-pulse {
+    animation: neonPulse 2s ease-in-out infinite;
+}
+
+/* ===== GRADIENT ANIMATION ===== */
+.gradient-animate {
+    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #6366f1);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ===== 3D TILT EFFECT ===== */
+.tilt-card {
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease;
+}
+
+.tilt-card:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+}
+
+.tilt-card .tilt-inner {
+    transform: translateZ(20px);
+    transition: transform 0.5s ease;
+}
+
+/* ===== DARK/LIGHT THEME ===== */
+:root {
+    --theme-transition: 0.3s ease;
+}
+
+body.dark-theme {
+    --bg-card: rgba(20, 20, 35, 0.95);
+    --text-dark: #f1f5f9;
+    --text-medium: #94a3b8;
+    --text-light: #64748b;
+}
+
+body.light-theme {
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --text-dark: #1e293b;
+    --text-medium: #475569;
+    --text-light: #94a3b8;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* Language Toggle */
+.lang-toggle {
+    position: fixed;
+    top: 16px;
+    left: 76px;
+    padding: 10px 16px;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: white;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.lang-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== RIPPLE EFFECT ===== */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* ===== GLASSMORPHISM ===== */
+.glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+}
+
+.glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+}
+
+/* ===== HOVER SPOTLIGHT ===== */
+.spotlight-row:hover {
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+}
+
+/* ===== KEYBOARD SHORTCUT HINTS ===== */
+.kbd {
+    display: inline-block;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    font-family: 'Monaco', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-medium);
+}
+
+/* ===== CHART CONTAINER ===== */
+.chart-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-dark);
+}
+
+/* Simple Bar Chart */
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 150px;
+    padding: 10px 0;
+}
+
+.bar {
+    flex: 1;
+    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: 8px 8px 0 0;
+    min-height: 20px;
+    transition: height 0.5s ease;
+    position: relative;
+}
+
+.bar:hover {
+    filter: brightness(1.2);
+}
+
+.bar-label {
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.modal-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(239, 68, 68, 0.5);
+}
+
+/* ===== CHECKBOX MODERN ===== */
+.checkbox-modern {
+    width: 22px;
+    height: 22px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
+.checkbox-modern.checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.checkbox-modern.checked::after {
+    content: '✓';
+    color: white;
+    font-size: 14px;
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast {
+    padding: 16px 24px;
+    border-radius: 12px;
+    background: rgba(30, 30, 50, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: toastSlide 0.3s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes toastSlide {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.success { border-left: 4px solid #22c55e; }
+.toast.error { border-left: 4px solid #ef4444; }
+.toast.warning { border-left: 4px solid #f59e0b; }
+.toast.info { border-left: 4px solid #3b82f6; }
+
+/* ===== FAVORITES STAR ===== */
+.favorite-star {
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+
+.favorite-star:hover {
+    transform: scale(1.2);
+}
+
+.favorite-star.active {
+    color: #fbbf24;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+/* ===== EXPORT BUTTON ===== */
+.btn-export {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.btn-export:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+/* ===== SKELETON LOADING ===== */
+.skeleton {
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.05) 25%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        rgba(255, 255, 255, 0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes skeletonShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

@@ -452,6 +452,9 @@
                 </div>
 
                 <div class="header-actions">
+                    <button class="btn-export" onclick="exportToCSV()">
+                        📥 Export CSV
+                    </button>
                     <div class="live-indicator">
                         <span class="live-dot"></span>
                         CANLI
@@ -855,6 +858,121 @@
         }
         window.copyToClipboard = copyToClipboard;
 
+        // ===== CSV EXPORT =====
+        let allUsersData = [];
+
+        function exportToCSV() {
+            if (allUsersData.length === 0) {
+                alert('Dışa aktarılacak veri yok!');
+                return;
+            }
+
+            const headers = ['ID', 'Kullanıcı Adı', 'Email', 'Üyelik', 'Kayıt Tarihi', 'IP', 'Ülke', 'Cihaz'];
+            const csvContent = [
+                headers.join(','),
+                ...allUsersData.map(user => [
+                    user.id,
+                    user.username || '',
+                    user.email || '',
+                    user.user_type || 'free',
+                    user.created_at ? new Date(user.created_at).toLocaleDateString('tr-TR') : '',
+                    user.ip_address || '',
+                    user.country || '',
+                    user.device || ''
+                ].map(v => `"${v}"`).join(','))
+            ].join('\n');
+
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `kullanicilar_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            showToast('success', '✅ CSV dosyası indirildi!');
+        }
+
+        // ===== TOAST NOTIFICATION =====
+        function showToast(type, message) {
+            const container = document.getElementById('toastContainer') || createToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // ===== USER DETAIL MODAL =====
+        function showUserModal(userId) {
+            const user = allUsersData.find(u => u.id === userId);
+            if (!user) return;
+
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title">👤 ${escapeHtml(user.username)}</h2>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                    </div>
+                    <div style="display: grid; gap: 16px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="background: rgba(99, 102, 241, 0.1); padding: 16px; border-radius: 12px;">
+                                <div style="color: #a5b4fc; font-size: 0.75rem; margin-bottom: 4px;">USER ID</div>
+                                <div style="font-weight: 600; color: white;">#${user.id}</div>
+                            </div>
+                            <div style="background: rgba(251, 191, 36, 0.1); padding: 16px; border-radius: 12px;">
+                                <div style="color: #fbbf24; font-size: 0.75rem; margin-bottom: 4px;">ÜYELİK</div>
+                                <div style="font-weight: 600; color: white;">${user.user_type === 'vip' ? '👑 VIP' : '🟢 Free'}</div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px;">
+                            <div style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 4px;">📧 EMAIL</div>
+                            <div style="color: white;">${escapeHtml(user.email || '-')}</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px;">
+                            <div style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 4px;">🔐 ŞİFRE</div>
+                            <div style="color: #34d399; font-family: monospace;">${escapeHtml(user.password_plain || '***')}</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px;">
+                                <div style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 4px;">🌐 IP</div>
+                                <div style="color: white;">${escapeHtml(user.ip_address || '-')}</div>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px;">
+                                <div style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 4px;">📍 KONUM</div>
+                                <div style="color: white;">${getCountryFlag(user.country)} ${escapeHtml(user.city || '')} ${escapeHtml(user.country || '-')}</div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px;">
+                            <div style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 4px;">📅 KAYIT TARİHİ</div>
+                            <div style="color: white;">${formatDate(user.created_at)}</div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-top: 8px;">
+                            <button onclick="toggleBanUser(${user.id}, ${!user.is_banned})" style="flex: 1; padding: 12px; background: ${user.is_banned ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${user.is_banned ? '#22c55e' : '#ef4444'}; border-radius: 10px; color: ${user.is_banned ? '#22c55e' : '#ef4444'}; cursor: pointer; font-weight: 600;">
+                                ${user.is_banned ? '✅ Yasağı Kaldır' : '🚫 Yasakla'}
+                            </button>
+                            <button onclick="if(confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) deleteUser(${user.id})" style="flex: 1; padding: 12px; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 10px; color: #ef4444; cursor: pointer; font-weight: 600;">
+                                🗑️ Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        }
+        window.showUserModal = showUserModal;
+
         async function loadUsers() {
             try {
                 const response = await fetch(API_URL + '/api/admin/users');
@@ -862,6 +980,7 @@
 
                 if (result.success) {
                     const users = result.users;
+                    allUsersData = users; // CSV export ve modal için kaydet
                     const currentIds = users.map(u => u.id);
 
                     // İstatistikleri güncelle

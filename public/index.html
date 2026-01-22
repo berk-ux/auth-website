@@ -104,7 +104,16 @@
     </style>
 </head>
 
-<body>
+<body class="gradient-animate">
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Tema Değiştir">🌙</button>
+
+    <!-- Language Toggle -->
+    <button class="lang-toggle" onclick="toggleLanguage()">🌍 TR</button>
+
+    <!-- Particles Container -->
+    <div class="particles-container" id="particles"></div>
+
     <!-- Tarih ve Saat Widget'ı -->
     <div id="dateTimeWidget" style="
         position: fixed;
@@ -360,6 +369,108 @@
             }
         }
         checkAdminAccess();
+
+        // ===== PARTICLES =====
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = (Math.random() * 8 + 4) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particle.style.animationDelay = (Math.random() * 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // ===== THEME TOGGLE =====
+        let isDarkTheme = false;
+
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            document.body.classList.toggle('dark-theme', isDarkTheme);
+            document.body.classList.toggle('light-theme', !isDarkTheme);
+            const btn = document.querySelector('.theme-toggle');
+            btn.textContent = isDarkTheme ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
+        }
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            toggleTheme();
+        }
+
+        // ===== LANGUAGE TOGGLE =====
+        const translations = {
+            tr: {
+                welcome: 'Hoş Geldiniz',
+                subtitle: 'Hesabınıza giriş yapın',
+                freeTab: 'Free Üye',
+                vipTab: 'VIP Üye',
+                email: 'Email veya Kullanıcı Adı',
+                password: 'Şifre',
+                login: 'Giriş Yap',
+                forgot: 'Şifremi Unuttum',
+                noAccount: 'Hesabınız yok mu?',
+                register: 'Kayıt Olun'
+            },
+            en: {
+                welcome: 'Welcome',
+                subtitle: 'Sign in to your account',
+                freeTab: 'Free Member',
+                vipTab: 'VIP Member',
+                email: 'Email or Username',
+                password: 'Password',
+                login: 'Sign In',
+                forgot: 'Forgot Password',
+                noAccount: "Don't have an account?",
+                register: 'Register'
+            }
+        };
+
+        let currentLang = 'tr';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'tr' ? 'en' : 'tr';
+            const btn = document.querySelector('.lang-toggle');
+            btn.textContent = currentLang === 'tr' ? '🌍 TR' : '🌍 EN';
+
+            const t = translations[currentLang];
+            document.querySelector('.auth-title').textContent = t.welcome;
+            document.querySelector('.auth-subtitle').textContent = t.subtitle;
+
+            localStorage.setItem('lang', currentLang);
+        }
+
+        // Load saved language
+        if (localStorage.getItem('lang') === 'en') {
+            toggleLanguage();
+        }
+
+        // ===== KEYBOARD SHORTCUTS =====
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K = Focus search/input
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                const input = document.querySelector('.form-input');
+                if (input) input.focus();
+            }
+            // Ctrl+T = Toggle theme
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                toggleTheme();
+            }
+            // Ctrl+L = Toggle language
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                toggleLanguage();
+            }
+        });
     </script>
 
     <!-- Footer -->
