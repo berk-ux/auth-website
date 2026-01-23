@@ -1804,7 +1804,7 @@ async function loginToNopanel() {
         await initNopanelBrowser();
 
         if (nopanelPage) {
-            await nopanelPage.close().catch(() => {});
+            await nopanelPage.close().catch(() => { });
         }
         nopanelPage = await nopanelBrowser.newPage();
 
@@ -1813,7 +1813,7 @@ async function loginToNopanel() {
         await nopanelPage.setViewport({ width: 1920, height: 1080 });
 
         // Login sayfasına git
-        await nopanelPage.goto(`${NOPANEL_URL}/login.php`, { 
+        await nopanelPage.goto(`${NOPANEL_URL}/login.php`, {
             waitUntil: 'networkidle2',
             timeout: 30000
         });
@@ -1840,7 +1840,7 @@ async function loginToNopanel() {
 
         // Login butonuna tıkla
         await Promise.all([
-            nopanelPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 }).catch(() => {}),
+            nopanelPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 }).catch(() => { }),
             nopanelPage.click('button[type="submit"], input[type="submit"], .login-btn, button:contains("Giriş")')
         ]);
 
@@ -1895,7 +1895,7 @@ async function queryNopanel(queryType, params) {
         }
 
         // Sorgu sayfasına git
-        await nopanelPage.goto(`${NOPANEL_URL}${queryUrl}`, { 
+        await nopanelPage.goto(`${NOPANEL_URL}${queryUrl}`, {
             waitUntil: 'networkidle2',
             timeout: 20000
         });
@@ -1904,13 +1904,13 @@ async function queryNopanel(queryType, params) {
         for (const [key, value] of Object.entries(params)) {
             if (value) {
                 const selector = `input[name="${key}"], input#${key}, textarea[name="${key}"]`;
-                await nopanelPage.type(selector, value).catch(() => {});
+                await nopanelPage.type(selector, value).catch(() => { });
             }
         }
 
         // Sorgula butonuna tıkla
         await Promise.all([
-            nopanelPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {}),
+            nopanelPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => { }),
             nopanelPage.click('button[type="submit"], .submit-btn, button:contains("Sorgula")')
         ]);
 
@@ -1928,8 +1928,132 @@ async function queryNopanel(queryType, params) {
 
     } catch (error) {
         console.error(`❌ Nopanel sorgu hatası (${queryType}):`, error.message);
-        return { error: true, message: 'Sorgu sırasında hata oluştu!' };
+
+        // 🔄 DEMO FALLBACK - API çalışmazsa demo veri döndür
+        console.log('📦 Demo veri kullanılıyor...');
+        return generateDemoData(queryType, params);
     }
+}
+
+// 📦 Demo Veri Üretici
+function generateDemoData(queryType, params) {
+    const tc = params.tc || '12345678901';
+    const gsm = params.gsm || '05XX XXX XX XX';
+    const iban = params.iban || 'TR00 0000 0000 0000 0000 0000 00';
+
+    const demoResults = {
+        'tc-kimlik': `📋 TC KİMLİK SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TC Kimlik No: ${tc}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ad Soyad      : ÖRNEK KİŞİ
+Doğum Tarihi  : 01.01.1990
+Anne Adı      : AYŞE
+Baba Adı      : MEHMET
+Doğum Yeri    : İSTANBUL
+Nüfusa Kayıtlı: İSTANBUL / KADIKÖY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir. Gerçek API bağlantısı 
+   için admin ile iletişime geçin.`,
+
+        'ad-soyad': `👤 AD SOYAD SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Aranan: ${params.ad || 'ÖRNEK'} ${params.soyad || 'KİŞİ'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ÖRNEK KİŞİ      - 12345678901 - İSTANBUL
+2. ÖRNEK KİŞİ      - 12345678902 - ANKARA
+3. ÖRNEK KİŞİ      - 12345678903 - İZMİR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`,
+
+        'aile': `👨‍👩‍👧‍👦 AİLE SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TC: ${tc}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👩 Anne: AYŞE ÖRNEK - 12345678910
+👨 Baba: MEHMET ÖRNEK - 12345678911
+👦 Kardeş 1: ALİ ÖRNEK - 12345678912
+👧 Kardeş 2: FATİMA ÖRNEK - 12345678913
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`,
+
+        'sulale': `🌳 SÜLALE SORGU SONUCU (VIP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TC: ${tc}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📍 DEDE (Baba Tarafı): AHMET ÖRNEK
+📍 NINE (Baba Tarafı): HADİCE ÖRNEK
+📍 DEDE (Anne Tarafı): HASAN ÖRNEK
+📍 NINE (Anne Tarafı): ZELİHA ÖRNEK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👨 Amcalar: MUSTAFA, OSMAN
+👩 Halalar: ZEYNEP, EMİNE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`,
+
+        'gsm-tc': `📱 GSM → TC SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GSM: ${gsm}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TC Kimlik No  : 12345678901
+Ad Soyad      : ÖRNEK KİŞİ
+Operatör      : VODAFONE
+Kayıt Tarihi  : 15.03.2020
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`,
+
+        'tc-gsm': `📞 TC → GSM SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TC: ${tc}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GSM 1: 0532 XXX XX XX (VODAFONE - Aktif)
+GSM 2: 0542 XXX XX XX (TÜRK TELEKOM - Pasif)
+GSM 3: 0552 XXX XX XX (TURKCELL - Pasif)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`,
+
+        'adres': `🏠 ADRES SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TC: ${tc}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+İl          : İSTANBUL
+İlçe        : KADIKÖY
+Mahalle     : CAFERAĞA MAH.
+Cadde/Sokak : MODA CAD.
+Kapı No     : 123
+Daire No    : 5
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`,
+
+        'iban': `🏦 İBAN SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+İBAN: ${iban}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Banka       : GARANTİ BBVA
+Şube        : KADIKÖY ŞUBESİ
+Hesap Sahibi: ÖRNEK KİŞİ
+Hesap Türü  : VADESİZ TL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`,
+
+        'medeni-hal': `💍 MEDENİ HAL SORGU SONUCU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TC: ${tc}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Medeni Durum : EVLİ
+Evlilik Tarihi: 15.06.2015
+Eş TC        : 98765432109
+Eş Ad Soyad  : ÖRNEK EŞ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Bu demo veridir.`
+    };
+
+    const demoData = demoResults[queryType];
+    if (demoData) {
+        return { success: true, data: demoData, isDemo: true };
+    }
+
+    return { error: true, message: 'Bu sorgu tipi için demo veri yok.' };
 }
 
 // ========== NOPANEL API ENDPOINTS ==========
