@@ -1309,33 +1309,67 @@
             </div>
         </nav>
 
-        <div class="menu-title">ÜCRETSİZ ÇÖZÜMLER</div>
+        <div class="menu-title">SORGU ÇÖZÜMLERİ</div>
         <nav class="menu-section">
             <!-- Mernis 2026 -->
             <div class="menu-item" onclick="toggleSubmenu('mernis')">
-                <span class="menu-icon">📋</span>
+                <span class="menu-icon">👤</span>
                 Mernis 2026
                 <span class="menu-arrow">▼</span>
             </div>
             <div class="submenu" id="mernis-submenu">
                 <div class="submenu-item"
-                    onclick="showQuery('tc', 'TC Sorgu', 'TC kimlik numarası ile sorgulama', 'TC Kimlik No girin...')">
-                    TC Sorgu
+                    onclick="showNopanelQuery('tc-kimlik', 'TC Kimlik Sorgulama', 'TC kimlik numarası ile kişi bilgilerini sorgulayın', 'TC Kimlik No (11 hane)')">
+                    TC Kimlik Sorgulama
                     <span class="menu-badge free">FREE</span>
                 </div>
                 <div class="submenu-item" onclick="showNameQuery()">
-                    Ad Soyad Sorgu
+                    Ad Soyad Sorgulama
                     <span class="menu-badge free">FREE</span>
                 </div>
                 <div class="submenu-item"
-                    onclick="showQuery('address', 'Hane/Adres Sorgu', 'TC ile adres sorgulama', 'TC Kimlik No girin...')">
-                    Hane/Adres Sorgu
+                    onclick="showNopanelQuery('tc-pro', 'TC Pro Sorgulama', 'Detaylı TC sorgusu (VIP)', 'TC Kimlik No girin...', true)">
+                    TC Pro Sorgulama
+                    <span class="menu-badge vip">VIP</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showNopanelQuery('medeni-hal', 'Medeni Hal Sorgulama', 'Medeni durum bilgisi sorgulama', 'TC Kimlik No girin...')">
+                    Medeni Hal Sorgulama
+                    <span class="menu-badge free">FREE</span>
+                </div>
+            </div>
+
+            <!-- Aile Çözümleri -->
+            <div class="menu-item" onclick="toggleSubmenu('aile')">
+                <span class="menu-icon">👨‍👩‍👧</span>
+                Aile Çözümleri
+                <span class="menu-arrow">▼</span>
+            </div>
+            <div class="submenu" id="aile-submenu">
+                <div class="submenu-item"
+                    onclick="showNopanelQuery('aile', 'Aile Sorgulama', 'TC ile aile bilgilerini sorgulayın', 'TC Kimlik No girin...')">
+                    Aile Sorgulama
                     <span class="menu-badge free">FREE</span>
                 </div>
                 <div class="submenu-item"
-                    onclick="showQuery('family', 'Aile Sorgu', 'TC ile aile bilgileri sorgulama', 'TC Kimlik No girin...')">
-                    Aile Sorgu
-                    <span class="menu-badge free">FREE</span>
+                    onclick="showNopanelQuery('sulale', 'Sülale Sorgulama', 'Tüm sülale ağacı (VIP)', 'TC Kimlik No girin...', true)">
+                    Sülale Sorgulama
+                    <span class="menu-badge vip">VIP</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showNopanelQuery('anne-tarafi', 'Anne Tarafı', 'Anne tarafı akrabalar (VIP)', 'TC Kimlik No girin...', true)">
+                    Anne Tarafı Sorgulama
+                    <span class="menu-badge vip">VIP</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showNopanelQuery('baba-tarafi', 'Baba Tarafı', 'Baba tarafı akrabalar (VIP)', 'TC Kimlik No girin...', true)">
+                    Baba Tarafı Sorgulama
+                    <span class="menu-badge vip">VIP</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showNopanelQuery('es', 'Eş Sorgulama', 'Eş bilgileri sorgulama (VIP)', 'TC Kimlik No girin...', true)">
+                    Eş Sorgulama
+                    <span class="menu-badge vip">VIP</span>
                 </div>
             </div>
 
@@ -1347,27 +1381,46 @@
             </div>
             <div class="submenu" id="gsm-submenu">
                 <div class="submenu-item"
-                    onclick="showQuery('gsm', 'GSM → TC', 'Telefon numarası ile TC sorgulama', '05XX XXX XX XX')">
-                    GSM → TC
+                    onclick="showNopanelQuery('gsm-tc', 'GSM → TC Sorgulama', 'Telefon numarasından TC öğrenin', '05XX XXX XX XX')">
+                    GSM → TC Sorgulama
                     <span class="menu-badge free">FREE</span>
                 </div>
                 <div class="submenu-item"
-                    onclick="showQuery('tcgsm', 'TC → GSM', 'TC ile telefon numarası sorgulama', 'TC Kimlik No girin...')">
-                    TC → GSM
+                    onclick="showNopanelQuery('tc-gsm', 'TC → GSM Sorgulama', 'TC numarasından telefon öğrenin', 'TC Kimlik No girin...')">
+                    TC → GSM Sorgulama
+                    <span class="menu-badge free">FREE</span>
+                </div>
+                <div class="submenu-item"
+                    onclick="showNopanelQuery('gsm-v2', 'GSM Sorgulama V2', 'Gelişmiş GSM sorgusu (VIP)', '05XX XXX XX XX', true)">
+                    GSM Sorgulama V2
+                    <span class="menu-badge vip">VIP</span>
+                </div>
+            </div>
+
+            <!-- Adres Çözümleri -->
+            <div class="menu-item" onclick="toggleSubmenu('adres')">
+                <span class="menu-icon">🏠</span>
+                Adres Çözümleri
+                <span class="menu-arrow">▼</span>
+            </div>
+            <div class="submenu" id="adres-submenu">
+                <div class="submenu-item"
+                    onclick="showNopanelQuery('adres', 'Adres Sorgulama', 'TC ile adres bilgisi sorgulayın', 'TC Kimlik No girin...')">
+                    Adres Sorgulama
                     <span class="menu-badge free">FREE</span>
                 </div>
             </div>
 
-            <!-- Araçlar -->
-            <div class="menu-item" onclick="toggleSubmenu('tools')">
-                <span class="menu-icon">🔧</span>
-                Araçlar
+            <!-- Diğer Çözümler -->
+            <div class="menu-item" onclick="toggleSubmenu('diger')">
+                <span class="menu-icon">🔍</span>
+                Diğer Çözümler
                 <span class="menu-arrow">▼</span>
             </div>
-            <div class="submenu" id="tools-submenu">
+            <div class="submenu" id="diger-submenu">
                 <div class="submenu-item"
-                    onclick="showQuery('plaka', 'Plaka Sorgu', 'Araç plakası ile sorgulama', 'Plaka girin... (34ABC123)')">
-                    Plaka Sorgu
+                    onclick="showNopanelQuery('iban', 'İBAN Sorgulama', 'İBAN numarası ile hesap bilgisi', 'TR ile başlayan İBAN girin...')">
+                    İBAN Sorgulama
                     <span class="menu-badge free">FREE</span>
                 </div>
             </div>
@@ -1377,7 +1430,7 @@
         <nav class="menu-section">
             <div class="menu-item" onclick="toggleSubmenu('premium')">
                 <span class="menu-icon">👑</span>
-                VIP Sorgular
+                VIP Özel Sorgular
                 <span class="menu-arrow">▼</span>
             </div>
             <div class="submenu" id="premium-submenu">
@@ -2240,6 +2293,147 @@
                 document.getElementById('profileRegDate').textContent = 'Bilinmiyor';
                 document.getElementById('profileQueryCount').textContent = '0';
                 document.getElementById('profileTimeSpent').textContent = 'Hesaplanamadı';
+            }
+        }
+
+        // 🆕 NOPANEL API SORGU FONKSIYONLARI
+        let currentNopanelQueryType = '';
+        let currentNopanelIsVip = false;
+
+        function showNopanelQuery(type, title, description, placeholder, isVip = false) {
+            // 📱 Mobilde sidebar'ı kapat
+            closeSidebarOnMobile();
+
+            // VIP kontrolü
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+            if (isVip && userData.user_type !== 'vip') {
+                alert('🔒 Bu özellik sadece VIP üyelere özeldir!\n\nVIP satın almak için admin ile iletişime geçin.');
+                return;
+            }
+
+            currentNopanelQueryType = type;
+            currentNopanelIsVip = isVip;
+
+            // Ekranları göster/gizle
+            document.getElementById('freeUserScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('queryScreen').style.display = 'block';
+            document.getElementById('nameQueryScreen').style.display = 'none';
+            document.getElementById('userProfileScreen').style.display = 'none';
+            document.getElementById('sessionSettingsScreen').style.display = 'none';
+
+            // Input tipine göre section göster
+            const singleInput = document.getElementById('singleInputSection');
+            const nameInput = document.getElementById('nameInputSection');
+
+            // Sadece ad-soyad sorgusu için çoklu input
+            if (type === 'ad-soyad') {
+                singleInput.style.display = 'none';
+                nameInput.style.display = 'block';
+            } else {
+                singleInput.style.display = 'block';
+                nameInput.style.display = 'none';
+            }
+
+            // Başlık ve açıklamayı güncelle
+            document.getElementById('pageTitle').textContent = title;
+            document.getElementById('queryTitle').innerHTML = `<span>🔍</span> <span>${title}</span>`;
+            document.getElementById('queryDescription').textContent = description;
+            document.getElementById('queryInput').placeholder = placeholder;
+            document.getElementById('queryBadge').textContent = isVip ? 'VIP' : 'FREE';
+            document.getElementById('queryBadge').style.background = isVip
+                ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.3) 100%)'
+                : 'rgba(99, 102, 241, 0.2)';
+            document.getElementById('queryBadge').style.color = isVip ? '#fbbf24' : '#818cf8';
+
+            // Input label güncelle
+            const inputLabel = document.getElementById('inputLabel');
+            if (type === 'gsm-tc' || type === 'gsm-v2') {
+                inputLabel.textContent = 'GSM Numarası';
+            } else if (type === 'iban') {
+                inputLabel.textContent = 'İBAN Numarası';
+            } else {
+                inputLabel.textContent = 'TC Kimlik No';
+            }
+
+            // Sonuç alanını temizle
+            document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('queryInput').value = '';
+
+            // Sorgula butonunu Nopanel API'ye yönlendir
+            document.getElementById('queryBtn').onclick = executeNopanelQuery;
+        }
+
+        async function executeNopanelQuery() {
+            const queryInput = document.getElementById('queryInput').value.trim();
+            const resultContent = document.getElementById('resultContent');
+            const resultSection = document.getElementById('resultSection');
+
+            if (!queryInput) {
+                alert('Lütfen bir değer girin!');
+                return;
+            }
+
+            // 🚫 BAN KONTROLÜ
+            if (user.is_banned) {
+                resultContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;">🚫</div>
+                        <h3 style="color: #ef4444; margin-bottom: 12px;">Erişim Engellendi</h3>
+                        <p style="color: #94a3b8;">Hesabınız kısıtlandığı için sorgu yapamazsınız.</p>
+                        <p style="color: #64748b; font-size: 0.85rem; margin-top: 8px;">Sebep: ${user.ban_reason || 'Belirtilmemiş'}</p>
+                    </div>
+                `;
+                resultSection.classList.add('show');
+                return;
+            }
+
+            // Loading göster
+            resultContent.innerHTML = '<div style="text-align: center; padding: 20px;"><div class="spinner" style="width: 40px; height: 40px; border: 3px solid rgba(99, 102, 241, 0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div><p style="margin-top: 12px; color: #94a3b8;">Nopanel API\'den sorgulanıyor...</p></div>';
+            resultSection.classList.add('show');
+
+            // Input tipine göre body oluştur
+            let requestBody = { userId: user.id };
+
+            if (currentNopanelQueryType === 'gsm-tc' || currentNopanelQueryType === 'gsm-v2') {
+                requestBody.gsm = queryInput.replace(/\s/g, '');
+            } else if (currentNopanelQueryType === 'iban') {
+                requestBody.iban = queryInput.replace(/\s/g, '').toUpperCase();
+            } else {
+                requestBody.tc = queryInput.replace(/\s/g, '');
+            }
+
+            try {
+                const response = await fetch(`/api/nopanel/${currentNopanelQueryType}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    // Sonucu göster
+                    resultContent.innerHTML = `
+                        <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                            <span style="color: #22c55e;">✅ Sorgu başarılı!</span>
+                        </div>
+                        <pre style="white-space: pre-wrap; word-wrap: break-word; background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; color: #e2e8f0; font-size: 0.9rem; line-height: 1.6;">${result.data}</pre>
+                    `;
+                } else {
+                    resultContent.innerHTML = `
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px;">
+                            <span style="color: #f87171;">❌ ${result.message || 'Sonuç bulunamadı!'}</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Nopanel API hatası:', error);
+                resultContent.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px;">
+                        <span style="color: #f87171;">❌ Bağlantı hatası! Lütfen tekrar deneyin.</span>
+                    </div>
+                `;
             }
         }
 

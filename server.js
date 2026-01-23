@@ -1748,6 +1748,472 @@ app.post('/api/external/adres', async (req, res) => {
     }
 });
 
+// ========== NOPANEL API ENTEGRASYONU ==========
+// nopanel-98453.top API proxy endpoint'leri
+// Cloudflare Turnstile korumalı site için session yönetimi
+
+// Nopanel credentials
+const NOPANEL_URL = 'https://nopanel-98453.top';
+const NOPANEL_USERNAME = 'armanii';
+const NOPANEL_PASSWORD = 'amsikitartar';
+
+// Nopanel browser instance
+let nopanelBrowser = null;
+let nopanelPage = null;
+let nopanelLastLogin = null;
+const NOPANEL_SESSION_TIMEOUT = 10 * 60 * 1000; // 10 dakika
+
+// Kullanıcıların Nopanel session cookie'leri
+const nopanelUserSessions = new Map();
+
+// Nopanel browser'ı başlat
+async function initNopanelBrowser() {
+    if (!puppeteer) {
+        console.log('⚠️ Puppeteer yüklü değil, Nopanel API kullanılamıyor');
+        return null;
+    }
+    if (!nopanelBrowser) {
+        console.log('🚀 Nopanel browser başlatılıyor...');
+        nopanelBrowser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu',
+                '--window-size=1920x1080'
+            ]
+        });
+        console.log('✅ Nopanel browser başlatıldı');
+    }
+    return nopanelBrowser;
+}
+
+// Nopanel'e login ol
+async function loginToNopanel() {
+    try {
+        // Session hala geçerli mi?
+        if (nopanelPage && nopanelLastLogin && (Date.now() - nopanelLastLogin) < NOPANEL_SESSION_TIMEOUT) {
+            console.log('📦 Mevcut Nopanel session kullanılıyor...');
+            return true;
+        }
+
+        console.log('🔐 Nopanel login yapılıyor...');
+
+        await initNopanelBrowser();
+
+        if (nopanelPage) {
+            await nopanelPage.close().catch(() => {});
+        }
+        nopanelPage = await nopanelBrowser.newPage();
+
+        // User agent ve viewport
+        await nopanelPage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        await nopanelPage.setViewport({ width: 1920, height: 1080 });
+
+        // Login sayfasına git
+        await nopanelPage.goto(`${NOPANEL_URL}/login.php`, { 
+            waitUntil: 'networkidle2',
+            timeout: 30000
+        });
+
+        // Cloudflare challenge bekle (5 saniye)
+        console.log('⏳ Cloudflare challenge bekleniyor...');
+        await new Promise(r => setTimeout(r, 5000));
+
+        // Cloudflare Turnstile checkbox'ını bulmaya çalış
+        try {
+            const cfFrame = await nopanelPage.frames().find(f => f.url().includes('challenges.cloudflare.com'));
+            if (cfFrame) {
+                await cfFrame.click('input[type="checkbox"]');
+                await new Promise(r => setTimeout(r, 3000));
+            }
+        } catch (e) {
+            console.log('Cloudflare checkbox bulunamadı veya geçildi');
+        }
+
+        // Form doldur
+        await nopanelPage.waitForSelector('input[name="username"], input[type="text"]', { timeout: 10000 });
+        await nopanelPage.type('input[name="username"], input[type="text"]', NOPANEL_USERNAME);
+        await nopanelPage.type('input[name="password"], input[type="password"]', NOPANEL_PASSWORD);
+
+        // Login butonuna tıkla
+        await Promise.all([
+            nopanelPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 }).catch(() => {}),
+            nopanelPage.click('button[type="submit"], input[type="submit"], .login-btn, button:contains("Giriş")')
+        ]);
+
+        // Dashboard'a yönlendirildi mi?
+        const currentUrl = nopanelPage.url();
+        if (currentUrl.includes('dashboard') || !currentUrl.includes('login')) {
+            nopanelLastLogin = Date.now();
+            console.log('✅ Nopanel login başarılı!');
+            return true;
+        }
+
+        console.log('⚠️ Nopanel login başarısız, URL:', currentUrl);
+        return false;
+
+    } catch (error) {
+        console.error('❌ Nopanel login hatası:', error.message);
+        return false;
+    }
+}
+
+// Nopanel'de sorgu yap
+async function queryNopanel(queryType, params) {
+    try {
+        const loggedIn = await loginToNopanel();
+        if (!loggedIn) {
+            return { error: true, message: 'Nopanel oturumu açılamadı! Cloudflare koruması aşılamıyor olabilir.' };
+        }
+
+        console.log(`🔍 Nopanel sorgu: ${queryType}`);
+
+        // Sorgu türüne göre URL belirle
+        const queryUrls = {
+            'tc-kimlik': '/mernis/tc-kimlik',
+            'ad-soyad': '/mernis/ad-soyad',
+            'aile': '/aile/aile-sorgulama',
+            'sulale': '/aile/sulale-sorgulama',
+            'anne-tarafi': '/aile/anne-tarafi',
+            'baba-tarafi': '/aile/baba-tarafi',
+            'es': '/aile/es-sorgulama',
+            'gsm-tc': '/gsm/gsm-tc',
+            'tc-gsm': '/gsm/tc-gsm',
+            'gsm-v2': '/gsm/gsm-sorgulama',
+            'adres': '/adres/adres-sorgulama',
+            'iban': '/diger/iban-sorgulama',
+            'tc-pro': '/mernis/tc-pro',
+            'medeni-hal': '/mernis/medeni-hal'
+        };
+
+        const queryUrl = queryUrls[queryType];
+        if (!queryUrl) {
+            return { error: true, message: 'Geçersiz sorgu tipi!' };
+        }
+
+        // Sorgu sayfasına git
+        await nopanelPage.goto(`${NOPANEL_URL}${queryUrl}`, { 
+            waitUntil: 'networkidle2',
+            timeout: 20000
+        });
+
+        // Form doldurup gönder
+        for (const [key, value] of Object.entries(params)) {
+            if (value) {
+                const selector = `input[name="${key}"], input#${key}, textarea[name="${key}"]`;
+                await nopanelPage.type(selector, value).catch(() => {});
+            }
+        }
+
+        // Sorgula butonuna tıkla
+        await Promise.all([
+            nopanelPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {}),
+            nopanelPage.click('button[type="submit"], .submit-btn, button:contains("Sorgula")')
+        ]);
+
+        // Sonuç içeriğini al
+        const resultContent = await nopanelPage.evaluate(() => {
+            const resultDiv = document.querySelector('.result, .sonuc, .query-result, #result, .card-body');
+            return resultDiv ? resultDiv.innerText : document.body.innerText;
+        });
+
+        if (resultContent && resultContent.length > 10) {
+            return { success: true, data: resultContent };
+        }
+
+        return { error: true, message: 'Sonuç bulunamadı!' };
+
+    } catch (error) {
+        console.error(`❌ Nopanel sorgu hatası (${queryType}):`, error.message);
+        return { error: true, message: 'Sorgu sırasında hata oluştu!' };
+    }
+}
+
+// ========== NOPANEL API ENDPOINTS ==========
+
+// 🔍 Nopanel TC Kimlik Sorgu
+app.post('/api/nopanel/tc-kimlik', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin (11 hane)!'
+            });
+        }
+
+        console.log(`🔍 Nopanel TC Sorgu: ${tc.substring(0, 3)}*****`);
+
+        const result = await queryNopanel('tc-kimlik', { tc: tc });
+
+        // Aktivite log
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_TC_SORGU', `TC Kimlik sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel TC sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Nopanel Ad Soyad Sorgu
+app.post('/api/nopanel/ad-soyad', async (req, res) => {
+    try {
+        const { ad, soyad, il, ilce, userId } = req.body;
+
+        if (!ad || !soyad) {
+            return res.status(400).json({
+                success: false,
+                message: 'Ad ve soyad gerekli!'
+            });
+        }
+
+        console.log(`🔍 Nopanel Ad Soyad Sorgu: ${ad} ${soyad}`);
+
+        const result = await queryNopanel('ad-soyad', { ad, soyad, il, ilce });
+
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_ADSOYAD_SORGU', `Ad Soyad sorgusu: ${ad} ${soyad}`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel Ad Soyad sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Nopanel Aile Sorgu
+app.post('/api/nopanel/aile', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin!'
+            });
+        }
+
+        const result = await queryNopanel('aile', { tc: tc });
+
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_AILE_SORGU', `Aile sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel Aile sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Nopanel GSM TC Sorgu
+app.post('/api/nopanel/gsm-tc', async (req, res) => {
+    try {
+        const { gsm, userId } = req.body;
+
+        if (!gsm || gsm.length < 10) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir GSM numarası girin!'
+            });
+        }
+
+        const result = await queryNopanel('gsm-tc', { gsm: gsm });
+
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_GSM_SORGU', `GSM TC sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel GSM sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Nopanel TC GSM Sorgu
+app.post('/api/nopanel/tc-gsm', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin!'
+            });
+        }
+
+        const result = await queryNopanel('tc-gsm', { tc: tc });
+
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_TCGSM_SORGU', `TC GSM sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel TC GSM sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Nopanel Adres Sorgu
+app.post('/api/nopanel/adres', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin!'
+            });
+        }
+
+        const result = await queryNopanel('adres', { tc: tc });
+
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_ADRES_SORGU', `Adres sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel Adres sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Nopanel İban Sorgu
+app.post('/api/nopanel/iban', async (req, res) => {
+    try {
+        const { iban, userId } = req.body;
+
+        if (!iban || iban.length < 20) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir İBAN numarası girin!'
+            });
+        }
+
+        const result = await queryNopanel('iban', { iban: iban });
+
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_IBAN_SORGU', `İban sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel İban sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🔍 Nopanel Sülale Sorgu (VIP)
+app.post('/api/nopanel/sulale', async (req, res) => {
+    try {
+        const { tc, userId } = req.body;
+
+        if (!tc || tc.length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçerli bir TC kimlik numarası girin!'
+            });
+        }
+
+        // VIP kontrolü
+        if (userId) {
+            const userCheck = await pool.query('SELECT user_type FROM users WHERE id = $1', [userId]);
+            if (userCheck.rows.length > 0 && userCheck.rows[0].user_type !== 'vip') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Bu özellik sadece VIP üyelere açıktır!'
+                });
+            }
+        }
+
+        const result = await queryNopanel('sulale', { tc: tc });
+
+        if (userId) {
+            const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+            if (userResult.rows.length > 0) {
+                await logActivity(userId, userResult.rows[0].username, 'NOPANEL_SULALE_SORGU', `Sülale sorgusu yapıldı`, req);
+            }
+        }
+
+        if (result.error) {
+            return res.json({ success: false, message: result.message });
+        }
+
+        res.json({ success: true, data: result.data });
+
+    } catch (error) {
+        console.error('❌ Nopanel Sülale sorgu hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
 // ========== STATIC FILES ==========
 
 
