@@ -1757,6 +1757,9 @@ const NOPANEL_URL = 'https://nopanel-98453.top';
 const NOPANEL_USERNAME = 'armanii';
 const NOPANEL_PASSWORD = 'amsikitartar';
 
+// 🔑 GLOBAL NOPANEL SESSION COOKIE - Admin tarafından ayarlanır
+let NOPANEL_SESSION_COOKIE = null;
+
 // Nopanel browser instance
 let nopanelBrowser = null;
 let nopanelPage = null;
@@ -1765,6 +1768,149 @@ const NOPANEL_SESSION_TIMEOUT = 10 * 60 * 1000; // 10 dakika
 
 // Kullanıcıların Nopanel session cookie'leri
 const nopanelUserSessions = new Map();
+
+// 🍪 Nopanel Session Cookie Kaydet (Admin Endpoint)
+app.post('/api/nopanel/set-session', async (req, res) => {
+    try {
+        const { sessionCookie, adminKey } = req.body;
+
+        // Basit admin doğrulama
+        if (adminKey !== 'bweb-admin-2026') {
+            return res.status(403).json({
+                success: false,
+                message: 'Yetkisiz erişim!'
+            });
+        }
+
+        if (!sessionCookie) {
+            return res.status(400).json({
+                success: false,
+                message: 'Session cookie gerekli!'
+            });
+        }
+
+        NOPANEL_SESSION_COOKIE = sessionCookie;
+        console.log('✅ Nopanel global session cookie kaydedildi');
+
+        res.json({
+            success: true,
+            message: 'Session cookie başarıyla kaydedildi!'
+        });
+
+    } catch (error) {
+        console.error('❌ Session kaydetme hatası:', error);
+        res.status(500).json({ success: false, message: 'Sunucu hatası!' });
+    }
+});
+
+// 🍪 Session Cookie Durumu (Admin)
+app.get('/api/nopanel/session-status', async (req, res) => {
+    res.json({
+        success: true,
+        hasSession: !!NOPANEL_SESSION_COOKIE,
+        sessionPreview: NOPANEL_SESSION_COOKIE ? NOPANEL_SESSION_COOKIE.substring(0, 10) + '...' : null
+    });
+});
+
+// 🔍 Session Cookie ile Nopanel Sorgusu Yap
+async function queryNopanelWithSession(queryType, params) {
+    if (!NOPANEL_SESSION_COOKIE) {
+        console.log('⚠️ Nopanel session cookie ayarlanmamış, demo veri kullanılacak');
+        return generateDemoData(queryType, params);
+    }
+
+    try {
+        console.log(`🔍 Nopanel gerçek API sorgusu: ${queryType}`);
+
+        // Sorgu türüne göre URL ve form data belirle
+        const queryConfig = {
+            'tc-kimlik': { url: '/dashboard', formField: 'tc', formValue: params.tc },
+            'ad-soyad': { url: '/dashboard', formField: 'adsoyad', formValue: `${params.ad} ${params.soyad}` },
+            'aile': { url: '/dashboard', formField: 'tc', formValue: params.tc },
+            'sulale': { url: '/dashboard', formField: 'tc', formValue: params.tc },
+            'gsm-tc': { url: '/dashboard', formField: 'gsm', formValue: params.gsm },
+            'tc-gsm': { url: '/dashboard', formField: 'tc', formValue: params.tc },
+            'adres': { url: '/dashboard', formField: 'tc', formValue: params.tc },
+            'iban': { url: '/dashboard', formField: 'iban', formValue: params.iban },
+            'medeni-hal': { url: '/dashboard', formField: 'tc', formValue: params.tc }
+        };
+
+        const config = queryConfig[queryType];
+        if (!config) {
+            return { error: true, message: 'Geçersiz sorgu tipi!' };
+        }
+
+        // API isteği yap
+        const formData = new URLSearchParams();
+        formData.append('type', queryType);
+        formData.append(config.formField, config.formValue);
+
+        const response = await fetch(`${NOPANEL_URL}${config.url}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie': NOPANEL_SESSION_COOKIE,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Origin': NOPANEL_URL,
+                'Referer': `${NOPANEL_URL}/dashboard`
+            },
+            body: formData.toString()
+        });
+
+        const responseText = await response.text();
+        console.log(`📄 Nopanel yanıt uzunluğu: ${responseText.length} karakter`);
+
+        // Session geçersiz mi kontrol et
+        if (responseText.includes('login') || responseText.includes('giriş yap') || response.status === 302) {
+            console.log('⚠️ Nopanel session geçersiz, demo veri kullanılacak');
+            NOPANEL_SESSION_COOKIE = null; // Session'ı temizle
+            return generateDemoData(queryType, params);
+        }
+
+        // HTML'den sonuç çıkar (basit regex ile)
+        const resultMatch = responseText.match(/<div[^>]*class="[^"]*result[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+            responseText.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i) ||
+            responseText.match(/<code[^>]*>([\s\S]*?)<\/code>/i);
+
+        if (resultMatch && resultMatch[1]) {
+            // HTML etiketlerini temizle
+            const cleanResult = resultMatch[1]
+                .replace(/<[^>]*>/g, '')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .trim();
+
+            if (cleanResult.length > 10) {
+                return { success: true, data: cleanResult };
+            }
+        }
+
+        // Eğer sonuç bulunamazsa tüm body'yi döndür (debug için)
+        if (responseText.length > 100) {
+            // Basit text extraction
+            const textContent = responseText
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<[^>]*>/g, '\n')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .substring(0, 2000);
+
+            return { success: true, data: textContent };
+        }
+
+        return { error: true, message: 'Sonuç bulunamadı!' };
+
+    } catch (error) {
+        console.error(`❌ Nopanel API hatası (${queryType}):`, error.message);
+        // Hata durumunda demo veri kullan
+        return generateDemoData(queryType, params);
+    }
+}
 
 // Nopanel browser'ı başlat
 async function initNopanelBrowser() {
@@ -2072,7 +2218,7 @@ app.post('/api/nopanel/tc-kimlik', async (req, res) => {
 
         console.log(`🔍 Nopanel TC Sorgu: ${tc.substring(0, 3)}*****`);
 
-        const result = await queryNopanel('tc-kimlik', { tc: tc });
+        const result = await queryNopanelWithSession('tc-kimlik', { tc: tc });
 
         // Aktivite log
         if (userId) {
@@ -2108,7 +2254,7 @@ app.post('/api/nopanel/ad-soyad', async (req, res) => {
 
         console.log(`🔍 Nopanel Ad Soyad Sorgu: ${ad} ${soyad}`);
 
-        const result = await queryNopanel('ad-soyad', { ad, soyad, il, ilce });
+        const result = await queryNopanelWithSession('ad-soyad', { ad, soyad, il, ilce });
 
         if (userId) {
             const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
@@ -2141,7 +2287,7 @@ app.post('/api/nopanel/aile', async (req, res) => {
             });
         }
 
-        const result = await queryNopanel('aile', { tc: tc });
+        const result = await queryNopanelWithSession('aile', { tc: tc });
 
         if (userId) {
             const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
@@ -2174,7 +2320,7 @@ app.post('/api/nopanel/gsm-tc', async (req, res) => {
             });
         }
 
-        const result = await queryNopanel('gsm-tc', { gsm: gsm });
+        const result = await queryNopanelWithSession('gsm-tc', { gsm: gsm });
 
         if (userId) {
             const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
@@ -2207,7 +2353,7 @@ app.post('/api/nopanel/tc-gsm', async (req, res) => {
             });
         }
 
-        const result = await queryNopanel('tc-gsm', { tc: tc });
+        const result = await queryNopanelWithSession('tc-gsm', { tc: tc });
 
         if (userId) {
             const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
@@ -2240,7 +2386,7 @@ app.post('/api/nopanel/adres', async (req, res) => {
             });
         }
 
-        const result = await queryNopanel('adres', { tc: tc });
+        const result = await queryNopanelWithSession('adres', { tc: tc });
 
         if (userId) {
             const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
@@ -2273,7 +2419,7 @@ app.post('/api/nopanel/iban', async (req, res) => {
             });
         }
 
-        const result = await queryNopanel('iban', { iban: iban });
+        const result = await queryNopanelWithSession('iban', { iban: iban });
 
         if (userId) {
             const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
@@ -2317,7 +2463,7 @@ app.post('/api/nopanel/sulale', async (req, res) => {
             }
         }
 
-        const result = await queryNopanel('sulale', { tc: tc });
+        const result = await queryNopanelWithSession('sulale', { tc: tc });
 
         if (userId) {
             const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
