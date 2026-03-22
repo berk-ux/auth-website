@@ -59,12 +59,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 // External URL (Render dışından erişim için)
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://auth_db_s18i_user:2uZ4U1pdzSxAXFaGiwcxAjPMjwUBibqx@dpg-d5k4ngur433s73eiqufg-a.virginia-postgres.render.com/auth_db_s18i';
 
-const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
 
-// Veritabanını başlat
+const pool = new Pool({
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 5000, 
+        idleTimeoutMillis: 30000,      
+        max: 10                        
+});
 async function initDatabase() {
     try {
         await pool.query(`
@@ -296,7 +298,16 @@ function createDeviceFingerprint(req) {
 
 // ========== API ENDPOINTS ==========
 
-// 🔐 Kullanıcı Kayıt
+// Health Check
+app.get('/api/health', (req, res) => {
+        res.json({ 
+                    status: 'ok', 
+                    timestamp: new Date().toISOString(),
+                    database: pool.totalCount > 0 ? 'connected' : 'connecting'
+        });
+});
+
+// User Register
 app.post('/api/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
