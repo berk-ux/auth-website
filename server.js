@@ -298,13 +298,33 @@ function createDeviceFingerprint(req) {
 
 // ========== API ENDPOINTS ==========
 
-// Health Check
-app.get('/api/health', (req, res) => {
-        res.json({ 
-                    status: 'ok', 
-                    timestamp: new Date().toISOString(),
-                    database: pool.totalCount > 0 ? 'connected' : 'connecting'
-        });
+// Saglik Kontrolu (Health Check)
+app.get('/api/health', async (req, res) => {
+        try {
+                    const startTime = Date.now();
+                    await pool.query('SELECT 1');
+                    const duration = Date.now() - startTime;
+                    res.json({ 
+                                    status: 'ok', 
+                                    timestamp: new Date().toISOString(),
+                                    database: 'connected',
+                                    latency: `${duration}ms`,
+                                    pool: {
+                                                        total: pool.totalCount,
+                                                        idle: pool.idleCount,
+                                                        waiting: pool.waitingCount
+                                    }
+                    });
+        } catch (err) {
+                    console.error('Health check database error:', err.message);
+                    res.status(500).json({ 
+                                    status: 'error', 
+                                    timestamp: new Date().toISOString(),
+                                    database: 'failed',
+                                    error: err.message,
+                                    detail: 'Database connection failed. Check DATABASE_URL or SSL settings.'
+                    });
+        }
 });
 
 // User Register
